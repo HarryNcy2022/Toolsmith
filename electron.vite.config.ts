@@ -20,7 +20,19 @@ export default defineConfig({
   renderer: {
     root: '.',
     base: './',
+    // Electron 31 = Chromium 126, supports top-level await + ES2022+.
+    // Raised from default because curlconverter uses top-level await for its WASM parser.
+    target: 'esnext',
+    esbuild: {
+      target: 'esnext'
+    },
+    optimizeDeps: {
+      esbuildOptions: {
+        target: 'esnext'
+      }
+    },
     build: {
+      target: 'esnext',
       rollupOptions: {
         input: { index: resolve(__dirname, 'index.html') }
       }

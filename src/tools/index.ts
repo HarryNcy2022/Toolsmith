@@ -19,3 +19,5 @@ import './color';
 import './random-string';
 import './line-sort';
 import './html-entity';
+import './curl-to-code';
+import './json-to-code';

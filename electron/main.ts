@@ -1,8 +1,10 @@
-import { app, BrowserWindow, shell } from 'electron';
+import { app, BrowserWindow, shell, globalShortcut, ipcMain } from 'electron';
 import { join } from 'path';
 
-function createWindow(): void {
-  const mainWindow = new BrowserWindow({
+let mainWindow: BrowserWindow | null = null;
+
+function createWindow(): BrowserWindow {
+  const win = new BrowserWindow({
     width: 1200,
     height: 800,
     minWidth: 900,
@@ -16,26 +18,79 @@ function createWindow(): void {
     }
   });
 
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+  win.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url);
     return { action: 'deny' };
   });
 
   if (process.env['ELECTRON_RENDERER_URL']) {
-    void mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
+    void win.loadURL(process.env['ELECTRON_RENDERER_URL']);
   } else {
-    void mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+    void win.loadFile(join(__dirname, '../renderer/index.html'));
+  }
+
+  return win;
+}
+
+function toggleWindow(): void {
+  if (!mainWindow) {
+    mainWindow = createWindow();
+    mainWindow.on('closed', () => {
+      mainWindow = null;
+    });
+    return;
+  }
+  if (mainWindow.isVisible()) {
+    if (mainWindow.isFocused()) {
+      mainWindow.hide();
+    } else {
+      mainWindow.focus();
+    }
+  } else {
+    mainWindow.show();
+    mainWindow.focus();
   }
 }
 
+function registerHotkey(): void {
+  // CmdOrCtrl+Shift+D — toggle show/hide
+  const ret = globalShortcut.register('CommandOrControl+Shift+D', () => {
+    toggleWindow();
+  });
+  if (!ret) {
+    console.warn('[dev-utils] Failed to register global hotkey (CmdOrCtrl+Shift+D)');
+  }
+}
+
+// IPC handlers
+ipcMain.handle('app:toggle-window', () => {
+  toggleWindow();
+});
+
+ipcMain.handle('app:read-clipboard', async () => {
+  const { clipboard } = await import('electron');
+  return clipboard.readText();
+});
+
 void app.whenReady().then(() => {
-  createWindow();
+  mainWindow = createWindow();
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+  registerHotkey();
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) {
+      mainWindow = createWindow();
+    }
   });
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  // Don't quit on win/lnx — user may toggle back via hotkey
+  // Only quit on explicit Cmd+Q or menu quit
+});
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll();
 });

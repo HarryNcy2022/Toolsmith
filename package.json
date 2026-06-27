@@ -2,6 +2,7 @@
   "name": "dev-utils",
   "version": "0.1.0",
   "description": "Cross-platform offline developer toolbox (Electron + React).",
+  "author": "HarryNcy",
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
@@ -9,7 +10,49 @@
     "preview": "electron-vite preview",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json",
     "typecheck:web": "tsc --noEmit -p tsconfig.web.json",
-    "typecheck": "npm run typecheck:node && npm run typecheck:web"
+    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "dist": "npm run build && electron-builder",
+    "dist:dir": "npm run build && electron-builder --dir",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:linux": "npm run build && electron-builder --linux"
+  },
+  "build": {
+    "appId": "com.harryncy.devutils",
+    "productName": "DevUtils",
+    "directories": {
+      "output": "../dev-utils-release",
+      "buildResources": "build"
+    },
+    "files": [
+      "out/**/*"
+    ],
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Development"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false
+    }
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
@@ -22,6 +65,7 @@
     "@uiw/react-codemirror": "^4.23.6",
     "change-case": "^5.4.0",
     "crypto-js": "^4.2.0",
+    "curlconverter": "^4.12.0",
     "dayjs": "^1.11.13",
     "diff": "^5.2.0",
     "he": "^1.2.0",
@@ -29,6 +73,7 @@
     "jwt-decode": "^4.0.0",
     "papaparse": "^5.4.1",
     "prettier": "^3.3.3",
+    "quicktype-core": "^23.2.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "sql-formatter": "^15.4.2",
@@ -50,6 +95,7 @@
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
     "electron": "^31.7.0",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^2.3.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.12",
