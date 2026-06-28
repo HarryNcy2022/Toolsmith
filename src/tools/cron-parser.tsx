@@ -31,7 +31,11 @@ function describe(expr: string): {
     const fields = FIELD_NAMES.map((name) => {
       const key = name === 'day-of-month' ? 'dayOfMonth' : name === 'day-of-week' ? 'dayOfWeek' : name;
       const f = (it.fields as any)[key];
-      return Array.isArray(f) ? f.join(', ') : String(f);
+      // cron-parser v5 exposes each field as a class instance (e.g. CronMinute);
+      // the raw number[] lives at `.values`. v4 returned the array directly, so
+      // handle both shapes for safety.
+      const arr = f && typeof f === 'object' && 'values' in f ? f.values : f;
+      return Array.isArray(arr) ? arr.join(', ') : String(arr);
     });
     let prev: string | undefined;
     try {

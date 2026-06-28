@@ -1,3 +1,4 @@
+import './lib/node-shim'; // install `process` global before any lib touches it
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './App';

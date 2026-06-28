@@ -1,19 +1,26 @@
 import { defineBeautifyTool } from '../components/BeautifyTool';
 
 // prettier + terser are sizable; lazy-load both.
-let prettierMod: typeof import('prettier/standalone') | null = null;
+// prettier 3 ships plugins in inconsistent module shapes:
+//   - `prettier/plugins/babel` is UMD (CJS)
+//   - `prettier/plugins/estree` is ESM
+// Vite's interop places the plugin object in different spots, so unwrap each
+// with `mod.default ?? mod` before handing them to `format({ plugins })`.
+let prettierMod: any = null;
 async function loadPrettier() {
   if (!prettierMod) {
-    const [standalone, babel, estree] = await Promise.all([
+    const [standaloneMod, babelMod, estreeMod] = await Promise.all([
       import('prettier/standalone'),
       import('prettier/plugins/babel'),
       import('prettier/plugins/estree')
     ]);
-    // stash plugins on a holder to keep refs
+    const standalone = (standaloneMod as any).default ?? standaloneMod;
+    const babel = (babelMod as any).default ?? babelMod;
+    const estree = (estreeMod as any).default ?? estreeMod;
     prettierMod = standalone;
-    (prettierMod as any).__plugins = [babel.default ?? babel, estree.default ?? estree];
+    prettierMod.__plugins = [babel, estree];
   }
-  return prettierMod as typeof import('prettier/standalone') & { __plugins: any[] };
+  return prettierMod;
 }
 
 let terserMod: typeof import('terser') | null = null;
@@ -34,7 +41,7 @@ defineBeautifyTool(
       const prettier = await loadPrettier();
       return prettier.format(s, {
         parser: 'babel',
-        plugins: (prettier as any).__plugins,
+        plugins: prettier.__plugins,
         semi: true,
         singleQuote: true
       });

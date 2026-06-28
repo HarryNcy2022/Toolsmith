@@ -5,9 +5,15 @@ import { css as cssLang } from '@codemirror/lang-css';
 // clean-css lazy-loaded — it references Node fs/url for file rebasing which we
 // never use, but bundling it eagerly pulls those externalizations into the
 // initial chunk.
-let minifierMod: typeof import('clean-css') | null = null;
+// Note: clean-css v5 is CJS where `module.exports = function CleanCSS(...)`.
+// Under Vite's ESM interop `(await import('clean-css')).default` is undefined,
+// so unwrap with `mod.default ?? mod` to get the constructor.
+let minifierMod: any = null;
 async function loadMinifier() {
-  if (!minifierMod) minifierMod = (await import('clean-css')).default;
+  if (!minifierMod) {
+    const mod = await import('clean-css');
+    minifierMod = (mod as any).default ?? mod;
+  }
   return minifierMod;
 }
 
