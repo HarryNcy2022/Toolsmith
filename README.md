@@ -36,19 +36,19 @@ npm run dist:win    # → ../dev-utils-release/DevUtils-0.1.0-x64.exe
 
 ## Features
 
-### 21 tools
+### 35 tools
 
 | Category | Tools |
 |----------|-------|
-| Format | JSON Format/Validate · SQL Formatter |
-| Encode | Base64 · URL Encode/Decode · HTML Entity |
+| Format | JSON Format/Validate · SQL Formatter · **HTML/CSS/JS/XML/SCSS Beautify+Minify** · **HTML Preview** · **Markdown Preview** |
+| Encode | Base64 · URL Encode/Decode · HTML Entity · **Backslash Escape** · **Base64 Image** |
 | Decode | JWT Debugger |
-| Convert | YAML↔JSON · JSON↔CSV · Number Base · String Case · Color · **cURL→Code** · **JSON→Code** |
-| Generate | UUID/ULID (v4·v7·ULID) · Hash (MD5→SHA512·SHA3·RIPEMD160) · Random String |
-| Inspect | URL Parser · RegExp Tester · Text Diff · Line Sort/Dedupe |
+| Convert | YAML↔JSON · JSON↔CSV · Number Base · String Case · Color · cURL→Code · JSON→Code · **Hex↔ASCII** · **HTML→JSX** · **QR Code** |
+| Generate | UUID/ULID (v4·v7·ULID) · Hash (MD5→SHA512·SHA3·RIPEMD160) · Random String · **Lorem Ipsum** |
+| Inspect | URL Parser · RegExp Tester · Text Diff · Line Sort/Dedupe · **Cron Parser** |
 | Time | Unix Time Converter |
 
-**Bold** = new in v2 (T2 tools).
+**Bold** = added in v3 (T3 tools). See the sidebar for the live grouped list.
 
 ### Global features
 
@@ -116,8 +116,14 @@ No routing changes, no central list edits.
 
 ### Bundle notes
 
-- Initial renderer bundle ≈ **920KB**. Heavy libs (`curlconverter` ~6MB with its WASM bash parser, `quicktype-core`) are **lazy-loaded** as separate chunks — only fetched when their tool is opened.
+- Initial renderer bundle ≈ **920KB**. All heavy libs are **lazy-loaded** as separate chunks — only fetched when their tool is opened:
+  - `curlconverter` ~7MB (WASM bash parser) — cURL→Code
+  - `sass` ~5.8MB (native bindings) — SCSS Formatter
+  - `terser`, `prettier/standalone` + babel/estree plugins — JS Formatter
+  - `html-minifier-terser`, `clean-css` — HTML/CSS minify
+  - `quicktype-core` + `web-tree-sitter` — JSON→Code
 - The renderer build target is `esnext` because `curlconverter` uses top-level `await` to load its WASM grammar. Electron 31's Chromium supports this.
+- Build warnings about `fs`/`url`/`path` "externalized for browser compatibility" (from `clean-css`, `sass`, `web-tree-sitter`) are **harmless** — those code paths only run for file-based operations we never invoke.
 
 ## Security
 

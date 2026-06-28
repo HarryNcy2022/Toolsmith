@@ -21,3 +21,18 @@ import './line-sort';
 import './html-entity';
 import './curl-to-code';
 import './json-to-code';
+// T3 tools
+import './backslash-escape';
+import './lorem-ipsum';
+import './hex-ascii';
+import './base64-image';
+import './html-format';
+import './css-format';
+import './js-format';
+import './xml-format';
+import './scss-format';
+import './html-preview';
+import './markdown-preview';
+import './html-to-jsx';
+import './qr-code';
+import './cron-parser';

@@ -4,7 +4,7 @@ Operating manual for AI agents (and humans) working on this codebase. Read befor
 
 ## What this is
 
-A cross-platform Electron rewrite of [DevUtils.app](https://devutils.com/) — an offline developer toolbox. v2 ships 21 tools (19 T1 + 2 T2) plus global features (command palette, clipboard smart-detect, global hotkey, input history) and installer packaging. Roadmap and priorities live in [`TOOL_PRIORITY.md`](./TOOL_PRIORITY.md).
+A cross-platform Electron rewrite of [DevUtils.app](https://devutils.com/) — an offline developer toolbox. v3 ships 35 tools (19 T1 + 2 T2 + 14 T3) plus global features (command palette, clipboard smart-detect, global hotkey, input history) and installer packaging. Roadmap and priorities live in [`TOOL_PRIORITY.md`](./TOOL_PRIORITY.md).
 
 ## Tech stack (quick)
 
@@ -53,14 +53,31 @@ registerTool({
 
 ### 4. Adding a tool = two files, no routing
 
-1. Create `src/tools/<id>.tsx`. Copy [`src/tools/url-encode.tsx`](src/tools/url-encode.tsx) for bidirectional tools, [`src/tools/hash.tsx`](src/tools/hash.tsx) for single-input-multi-output. For async transforms (e.g. `quicktype`, `curlconverter`), copy [`src/tools/json-to-code.tsx`](src/tools/json-to-code.tsx) — it uses a `useEffect`-driven async flow with `busy`/`error` state. For plain input→output, use the [`TransformTool`](src/components/TransformTool.tsx) helper.
+1. Create `src/tools/<id>.tsx`. Pick the right template for the tool's shape:
+   - Bidirectional (encode↔decode, yaml↔json): copy [`src/tools/url-encode.tsx`](src/tools/url-encode.tsx).
+   - Single-input-multi-output: copy [`src/tools/hash.tsx`](src/tools/hash.tsx).
+   - Async transform (e.g. `quicktype`, `curlconverter`): copy [`src/tools/json-to-code.tsx`](src/tools/json-to-code.tsx) — `useEffect`-driven async flow with `busy`/`error` state.
+   - **Beautify/minify with a toggle**: use the [`BeautifyTool`](src/components/BeautifyTool.tsx) helper — pass `beautify` + optional `minify` fns (sync or `Promise<string>`).
+   - Plain input→output: use the [`TransformTool`](src/components/TransformTool.tsx) helper.
 2. Add `import './<id>';` to [`src/tools/index.ts`](src/tools/index.ts).
 
 Do **not** edit `registry.ts`, `App.tsx`, or the sidebar to add a tool.
 
 ### 5. Heavy libs must be lazy-loaded
 
-`curlconverter` (~6MB + WASM) and `quicktype-core` are imported via **dynamic `import()`** inside their tool components, not at module top-level. This keeps the initial bundle small and isolates features that need a higher build target (top-level await, WASM). When adding a tool backed by a heavy lib, lazy-load it and cache the resolved module.
+These libs are large and must be imported via **dynamic `import()`** inside their tool components, never at module top-level:
+
+| Lib | Size | Tool |
+|-----|------|------|
+| `curlconverter` | ~7MB + WASM | cURL→Code |
+| `quicktype-core` + `web-tree-sitter` | ~5MB | JSON→Code |
+| `sass` | ~5.8MB (native bindings) | SCSS Formatter |
+| `terser` | ~1MB | JS Formatter (minify) |
+| `prettier/standalone` + babel/estree | ~620KB | JS Formatter (beautify) |
+| `html-minifier-terser` | ~160KB | HTML Formatter (minify) |
+| `clean-css` | ~80KB | CSS Formatter (minify) |
+
+Pattern: declare a module-level `let mod = null`, an `async function load()` that imports + caches it, and call `load()` inside the transform fn. See [`scss-format.tsx`](src/tools/scss-format.tsx) or [`css-format.tsx`](src/tools/css-format.tsx) for the canonical shape. This keeps the **initial bundle at ~920KB** and isolates libs that need a higher build target (top-level await, WASM, native bindings).
 
 ### 6. Keep tool logic pure and unit-testable
 
@@ -128,12 +145,12 @@ Priority ordering of all 47 DevUtils tools (and which are done) is in [`TOOL_PRI
 - [ ] Clipboard smart-detect on window focus (currently button-triggered only)
 - [ ] Configurable global hotkey (hardcoded `CmdOrCtrl+Shift+D` for now)
 - [ ] History clear / settings UI
-- [ ] T3/T4 tools (formatters, previews, QR, cron, PHP, cert, ERB…)
-- [ ] Code-split quicktype-core too (currently only curlconverter is lazy)
+- [x] T3 tools (formatters, previews, QR, cron) — **done in v3**
+- [ ] T4 tools (PHP, cert, ERB…)
 - [ ] App icon (`build/icon.png`) — currently uses default Electron icon
 - [ ] Code signing for distribution (mac notarization, win authenticode)
 
-## Dependency notes (gotchas hit during v1/v2)
+## Dependency notes (gotchas hit during v1/v2/v3)
 
 - `json2csv` v6 never published stable — use `papaparse`'s `unparse` instead.
 - `change-case` v5 dropped `lowerCase`/`upperCase`/`titleCase` — use `noCase().toLower/Upper()` and `capitalCase`/`sentenceCase`.
@@ -142,4 +159,11 @@ Priority ordering of all 47 DevUtils tools (and which are done) is in [`TOOL_PRI
 - `dayjs` needs explicit `extend()` for `relativeTime`, `weekOfYear`, `timezone`, `utc`.
 - `curlconverter` uses **top-level `await`** to load a WASM bash parser. This breaks Vite's default esbuild target. The renderer target is set to `esnext` (`electron.vite.config.ts`) and the lib is **lazy-loaded** so it lands in its own chunk — don't change either without re-testing.
 - `quicktype-core`'s `lang` / `jsonInputForTargetLanguage` params are wide string unions; passing a `string` needs `as any` cast (see [`json-to-code.tsx`](src/tools/json-to-code.tsx)). It also pulls `web-tree-sitter` which bundles `fs`/`path` references — these are externalized and harmless for our JSON-sample-only usage.
+- `htmltojsx` (npm) is a **dead 2017 package** that imports `react-dom/lib/HTMLDOMPropertyConfig` (deleted in modern React) and breaks the build. We hand-rolled the converter instead in [`html-to-jsx.tsx`](src/tools/html-to-jsx.tsx) — do not re-add the npm dep.
+- `sass` is a CJS module with no ESM default export. Use `import * as sass from 'sass'`, not `import sass from 'sass'`. Its native bindings work fine in Electron but bloat the bundle (~5.8MB) — it is lazy-loaded.
+- `html-minifier-terser.minify` is **async** (returns `Promise<string>`). The `BeautifyTool` helper handles `string | Promise<string>` results; don't cast it to sync.
+- `terser.minify` **rejects** on parse error (does not set `out.error`) — let the promise reject propagate to the helper.
+- `cron-parser` v5 exports `CronExpressionParser` as default; the entry method is `.parse()` (not `.parseExpression()`). `.toISOString()` can return `null`.
+- `lorem-ipsum`'s option is `units` (plural), not `unit`.
+- `xml-formatter`, `html-minifier-terser` ship no `.d.ts` — type shims live in [`src/module-shims.d.ts`](src/module-shims.d.ts).
 - electron-builder on Windows can fail with `EBUSY`/`EPERM` on `default_app.asar` if an editor file-watcher locks the output dir. Output is therefore outside the project tree.
