@@ -66,9 +66,23 @@ export default defineConfig({
       }
     },
     resolve: {
-      alias: {
-        '@renderer': resolve(__dirname, 'src')
-      }
+      alias: [
+        {
+          find: '@renderer',
+          replacement: resolve(__dirname, 'src')
+        },
+        {
+          // clean-css v5 is CJS and `require('path')` reaches Vite's externalized
+          // Node-builtin stub, which has no `resolve`/`dirname`/`join`/etc. — the
+          // CleanCSS constructor + reader call `path.resolve('')` unconditionally
+          // for every minify, throwing "path.resolve is not a function" in the
+          // renderer sandbox. Point `path` at the browser polyfill instead.
+          // (sass / terser / html-minifier-terser bundle their own `path` copy,
+          // so this alias effectively only touches clean-css.)
+          find: /^path$/,
+          replacement: 'path-browserify'
+        }
+      ]
     },
     plugins: [react(), curlconverterWasmBase()]
   }
