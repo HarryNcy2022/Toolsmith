@@ -5,15 +5,23 @@ import { CopyButton } from '../components/CopyButton';
 function parseAny(input: string, base: number): bigint | null {
   const s = input.trim().replace(/^0[box]/i, '').replace(/_/g, '');
   if (!s) return null;
+  // Per-base digit validation, then parse via BigInt on a prefixed literal.
+  // Using BigInt (not parseInt) avoids the 32-bit truncation that silently
+  // broke large hex values before; the 0x/0o/0b prefix is re-added because
+  // line above strips a leading 0b/0o/0x for display normalization.
+  const digitRe: Record<number, RegExp> = {
+    16: /^-?[0-9a-f]+$/i,
+    10: /^-?\d+$/,
+    8: /^-?[0-7]+$/,
+    2: /^-?[01]+$/
+  };
+  const prefix: Record<number, string> = { 16: '0x', 8: '0o', 2: '0b' };
+  const re = digitRe[base];
+  if (!re || !re.test(s)) return null;
   try {
-    if (base === 10) {
-      if (/^-?\d+$/.test(s)) return BigInt(s);
-      return null;
-    }
-    if (base === 16 && /^-?[0-9a-f]+$/i.test(s)) return BigInt(parseInt(s, 16)) * (s.startsWith('-') ? -1n : 1n);
-    if (base === 8 && /^-?[0-7]+$/.test(s)) return BigInt(s);
-    if (base === 2 && /^-?[01]+$/.test(s)) return BigInt(`0b${s}`);
-    return null;
+    if (base === 10) return BigInt(s);
+    const neg = s.startsWith('-');
+    return BigInt((neg ? '-' : '') + prefix[base] + (neg ? s.slice(1) : s));
   } catch {
     return null;
   }
@@ -35,6 +43,10 @@ function Component() {
 
   const n = parseAny(input, base);
   const valid = n !== null;
+  const empty = input.trim() === '';
+  // In the render branch below, `valid` guarantees `n` is non-null, but TS
+  // can't narrow across the ternary, so capture a typed non-null view.
+  const value = n as bigint;
 
   return (
     <div className="flex flex-col gap-4 h-full overflow-auto">
@@ -59,15 +71,17 @@ function Component() {
       </div>
 
       <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg px-4 py-2">
-        {!valid ? (
+        {!valid && !empty ? (
           <div className="text-sm text-red-400 py-2">Invalid number for the selected base</div>
+        ) : empty ? (
+          <div className="text-sm text-neutral-600 py-2">Enter a number to convert</div>
         ) : (
           <>
-            <Row label="Binary" value={n.toString(2)} />
-            <Row label="Octal" value={n.toString(8)} />
-            <Row label="Decimal" value={n.toString(10)} />
-            <Row label="Hex" value={n.toString(16).toUpperCase()} />
-            <Row label="Bytes" value={hexToBytes(n.toString(16).replace('-', ''))} />
+            <Row label="Binary" value={value.toString(2)} />
+            <Row label="Octal" value={value.toString(8)} />
+            <Row label="Decimal" value={value.toString(10)} />
+            <Row label="Hex" value={value.toString(16).toUpperCase()} />
+            <Row label="Bytes" value={hexToBytes(value.toString(16).replace('-', ''))} />
           </>
         )}
       </div>

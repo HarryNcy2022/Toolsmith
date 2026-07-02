@@ -4,6 +4,15 @@ import { CopyButton } from '../components/CopyButton';
 
 const FLAGS = ['g', 'i', 'm', 's', 'u', 'y'] as const;
 
+const FLAG_HELP: Record<string, string> = {
+  g: 'global — find all matches (not just the first)',
+  i: 'ignore case — case-insensitive match',
+  m: 'multiline — ^ and $ match line boundaries, not just string ends',
+  s: 'dotAll — . matches newlines too',
+  u: 'unicode — treat the pattern as Unicode (code points, code units for {...})',
+  y: 'sticky — match at the current position (lastIndex)'
+};
+
 interface MatchInfo {
   match: string;
   index: number;
@@ -45,10 +54,38 @@ function escapeHtml(s: string): string {
     .replace(/>/g, '&gt;');
 }
 
+// Expand a String.replace-style replacement template for a single match.
+// Supports: $$, $&, $1-$9, $<name>, $`, $'. This is applied per-match so the
+// caller controls which matches get substituted (e.g. skipping zero-length
+// matches to stay consistent with the Matches panel).
+function expandTemplate(tpl: string, m: RegExpExecArray): string {
+  const named = (m.groups ?? {}) as Record<string, string>;
+  return tpl.replace(/\$(\$|&|`|'|\d+|<[^>]+>)/g, (whole, body: string) => {
+    switch (body) {
+      case '$':
+        return '$';
+      case '&':
+        return m[0];
+      case '`':
+        return m.input ? m.input.slice(0, m.index) : '';
+      case "'":
+        return m.input ? m.input.slice(m.index + m[0].length) : '';
+      default:
+        if (body[0] === '<') {
+          const name = body.slice(1, -1);
+          return name in named ? named[name] : whole;
+        }
+        const n = Number(body);
+        return n < m.length && m[n] !== undefined ? (m[n] as string) : '';
+    }
+  });
+}
+
 function Component() {
   const [pattern, setPattern] = useState('');
   const [flags, setFlags] = useState<Set<string>>(new Set(['g', 'i']));
   const [text, setText] = useState('');
+  const [replacement, setReplacement] = useState('');
 
   const flagStr = useMemo(() => [...flags].join(''), [flags]);
 
@@ -56,6 +93,37 @@ function Component() {
     () => highlight(text, pattern, flagStr),
     [text, pattern, flagStr]
   );
+
+  // VS Code-style pattern → replace: substitute every highlighted match with
+  // the user's replacement template ($1, $2, $&, $<name>, $$, $`, $' all work).
+  // Mirror the Matches panel exactly: force the global flag, and skip
+  // zero-length matches so the replace count equals the highlighted count
+  // (otherwise greedy patterns like (.*) would inject an extra substitution
+  // for the trailing empty match). Empty replacement deletes matches.
+  const { output, replaceError } = useMemo(() => {
+    if (!pattern || !text) return { output: '', replaceError: null as string | null };
+    try {
+      const re = new RegExp(pattern, flagStr.includes('g') ? flagStr : flagStr + 'g');
+      let out = '';
+      let last = 0;
+      let m: RegExpExecArray | null;
+      let safety = 0;
+      while ((m = re.exec(text)) !== null) {
+        if (m[0].length === 0) {
+          re.lastIndex++;
+          continue;
+        }
+        out += text.slice(last, m.index);
+        out += expandTemplate(replacement, m);
+        last = m.index + m[0].length;
+        if (++safety > 5000) break;
+      }
+      out += text.slice(last);
+      return { output: out, replaceError: null };
+    } catch (e) {
+      return { output: '', replaceError: e instanceof Error ? e.message : String(e) };
+    }
+  }, [text, pattern, flagStr, replacement]);
 
   function toggleFlag(f: string) {
     setFlags((prev) => {
@@ -83,6 +151,7 @@ function Component() {
           {FLAGS.map((f) => (
             <button
               key={f}
+              title={FLAG_HELP[f]}
               onClick={() => toggleFlag(f)}
               className={`w-7 h-7 text-xs rounded border ${
                 flags.has(f)
@@ -93,6 +162,15 @@ function Component() {
               {f}
             </button>
           ))}
+        </div>
+        <div className="flex items-center gap-2 bg-neutral-900 border border-neutral-700 rounded px-2 flex-1 min-w-[180px] focus-within:border-blue-500">
+          <span className="text-blue-400 text-xs font-medium uppercase tracking-wide">Replace</span>
+          <input
+            value={replacement}
+            onChange={(e) => setReplacement(e.target.value)}
+            placeholder="$1, $2, $&, $<name>…"
+            className="bg-transparent py-1.5 text-sm font-mono text-emerald-300 focus:outline-none flex-1"
+          />
         </div>
       </div>
 
@@ -134,6 +212,27 @@ function Component() {
                 </div>
               ))}
             </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-col min-h-0 bg-neutral-950 border border-neutral-800 border-dashed rounded-lg overflow-hidden shrink-0 max-h-48">
+        <div className="px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-neutral-500 border-b border-neutral-800 flex items-center justify-between">
+          <span>Output · replace result</span>
+          {replaceError && <span className="text-red-400 normal-case">{replaceError}</span>}
+          {!replaceError && output && <CopyButton getText={() => output} />}
+        </div>
+        <div className="flex-1 min-h-0 overflow-auto p-3">
+          {output ? (
+            <pre className="text-sm font-mono text-emerald-300 whitespace-pre-wrap break-words">
+              {output}
+            </pre>
+          ) : (
+            <span className="text-xs text-neutral-600">
+              {pattern
+                ? 'Result will appear here — type a replace template in the “Replace” box above'
+                : 'Result will appear here — enter a pattern first'}
+            </span>
           )}
         </div>
       </div>

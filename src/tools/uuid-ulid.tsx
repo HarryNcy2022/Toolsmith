@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ulid } from 'ulid';
 import { uuidv7 } from 'uuidv7';
 import { registerTool } from '../lib/registry';
@@ -54,6 +54,14 @@ function Component() {
 
   const decodeInfo =
     kind === 'ulid' && ids[0] ? decodeUlid(ids[0]) : null;
+
+  // Regenerate when kind changes so the list/decode reflects the new type,
+  // instead of leaving a stale value from the previous kind (e.g. a UUID
+  // string being fed to decodeUlid, which then errors).
+  useEffect(() => {
+    regen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind]);
 
   return (
     <div className="flex flex-col gap-4 h-full overflow-auto">

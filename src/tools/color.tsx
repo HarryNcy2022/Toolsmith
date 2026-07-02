@@ -61,7 +61,7 @@ function Component() {
             <Row label="HEX (alpha)" value={results.hex8} />
             <Row label="RGB" value={results.rgb} />
             <Row label="HSL" value={results.hsl} />
-            <Row label="HSV" value={results.hsv} />
+            <Row label="HSB (HSV)" value={results.hsv} />
             <Row label="Name" value={results.name} />
           </>
         )}

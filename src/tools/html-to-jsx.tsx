@@ -113,9 +113,7 @@ export function htmlToJsx(html: string): string {
 }
 
 function Component() {
-  const [input, setInput] = useState(
-    '<div class="card">\n  <h1 style="color:red;font-size:24px">Title</h1>\n  <p>Hello <strong>world</strong></p>\n  <button onclick="x">Click</button>\n</div>'
-  );
+  const [input, setInput] = useState('');
 
   const { output, error } = useMemo(() => {
     if (!input) return { output: '', error: null };

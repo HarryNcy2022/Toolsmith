@@ -167,3 +167,4 @@ Priority ordering of all 47 DevUtils tools (and which are done) is in [`TOOL_PRI
 - `lorem-ipsum`'s option is `units` (plural), not `unit`.
 - `xml-formatter`, `html-minifier-terser` ship no `.d.ts` — type shims live in [`src/module-shims.d.ts`](src/module-shims.d.ts).
 - electron-builder on Windows can fail with `EBUSY`/`EPERM` on `default_app.asar` if an editor file-watcher locks the output dir. Output is therefore outside the project tree.
+- The renderer has a strict **Content Security Policy** set in [`index.html`](index.html) (`default-src 'self'; ... ; img-src 'self' data: blob:`). Any new feature using `blob:` URLs (e.g. `URL.createObjectURL` for image previews — see `qr-code.tsx` Read tab) needs the relevant directive allowlisted here, or the resource is silently blocked. Add `blob:` to the matching `*-src` (currently only `img-src` has it); do **not** loosen `default-src` or `script-src`.

@@ -26,6 +26,12 @@ const TZS = [
   'Australia/Sydney'
 ];
 
+// Default to the user's local IANA zone, and make sure it's selectable even
+// if it isn't in the curated TZS list above (otherwise the <select> would
+// render the default with no matching option).
+const LOCAL_TZ = dayjs.tz.guess();
+const TZ_OPTIONS = TZS.includes(LOCAL_TZ) ? TZS : [LOCAL_TZ, ...TZS];
+
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-3 py-1.5 border-b border-neutral-800/60 last:border-0">
@@ -38,7 +44,7 @@ function Row({ label, value }: { label: string; value: string }) {
 
 function Component() {
   const [epoch, setEpoch] = useState<string>(String(Math.floor(Date.now() / 1000)));
-  const [tz, setTz] = useState('UTC');
+  const [tz, setTz] = useState(LOCAL_TZ);
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
 
   useEffect(() => {
@@ -69,7 +75,7 @@ function Component() {
           onChange={(e) => setTz(e.target.value)}
           className="px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded text-xs text-neutral-300"
         >
-          {TZS.map((t) => (
+          {TZ_OPTIONS.map((t) => (
             <option key={t} value={t}>
               {t}
             </option>

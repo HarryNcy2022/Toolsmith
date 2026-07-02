@@ -7,22 +7,8 @@ import { CodeEditor } from '../components/CodeEditor';
 
 marked.setOptions({ gfm: true, breaks: false });
 
-const SAMPLE = `# Heading
-
-Some **bold** and *italic* text.
-
-- list item 1
-- list item 2
-
-\`\`\`js
-const x = 1;
-\`\`\`
-
-[link](https://example.com)
-`;
-
 function Component() {
-  const [input, setInput] = useState(SAMPLE);
+  const [input, setInput] = useState('');
 
   const html = useMemo(() => {
     try {
@@ -47,7 +33,7 @@ function Component() {
         <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-neutral-400 border-b border-neutral-800">
           Preview
         </div>
-        <div className="flex-1 min-h-0 overflow-auto bg-white">
+        <div className="flex-1 min-h-0 overflow-auto bg-neutral-900">
           <div
             className="markdown-body p-6"
             // marked output is sanitized via DOMPurify before injection

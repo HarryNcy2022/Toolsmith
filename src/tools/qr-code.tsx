@@ -148,9 +148,27 @@ function Read() {
   const [decoded, setDecoded] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  async function decodeFile(file: File) {
+  // Load a pasted/uploaded/dropped image: preview it AND attempt to decode.
+  // Replaces any previously-created object URL to avoid leaking them.
+  function loadImage(blob: Blob) {
+    setImageUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(blob);
+    });
+    return decodeFile(blob);
+  }
+
+  // Revoke the object URL on unmount so we don't leak it when leaving the tab.
+  useEffect(() => {
+    return () => {
+      if (imageUrl) URL.revokeObjectURL(imageUrl);
+    };
+  }, [imageUrl]);
+
+  async function decodeFile(file: Blob) {
     setError(null);
     setDecoded('');
     try {
@@ -173,17 +191,44 @@ function Read() {
     }
   }
 
+  async function pasteFromClipboard() {
+    setError(null);
+    setDecoded('');
+    try {
+      // read() (not readText) is required to access image clipboard items.
+      const items = await navigator.clipboard.read();
+      const item = items.find((it) => Array.from(it.types).some((t) => t.startsWith('image/')));
+      if (!item) {
+        setError('No image found on clipboard');
+        return;
+      }
+      const imageType = Array.from(item.types).find((t) => t.startsWith('image/'))!;
+      const blob = await item.getType(imageType);
+      await loadImage(blob);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-0">
       <div className="flex flex-col min-h-0 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden">
         <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-neutral-400 border-b border-neutral-800 flex items-center justify-between">
           <span>Image</span>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="px-2.5 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200"
-          >
-            Upload
-          </button>
+          <div className="flex gap-1.5">
+            <button
+              onClick={() => void pasteFromClipboard()}
+              className="px-2.5 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200"
+            >
+              Paste
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="px-2.5 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200"
+            >
+              Upload
+            </button>
+          </div>
         </div>
         <input
           ref={fileInputRef}
@@ -192,27 +237,33 @@ function Read() {
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
-            if (f) void decodeFile(f);
+            if (f) void loadImage(f);
           }}
         />
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragOver(true);
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragOver(false);
-            const f = e.dataTransfer.files?.[0];
-            if (f) void decodeFile(f);
-          }}
-          className={`flex-1 min-h-0 flex items-center justify-center p-6 border-2 border-dashed m-3 rounded-lg text-sm ${
-            dragOver ? 'border-blue-500 bg-blue-600/10 text-blue-300' : 'border-neutral-700 text-neutral-500'
-          }`}
-        >
-          Drop QR image here, or click Upload
-        </div>
+        {imageUrl ? (
+          <div className="flex-1 min-h-0 flex items-center justify-center p-4 bg-neutral-950 overflow-auto">
+            <img src={imageUrl} alt="Pasted QR" className="max-w-full max-h-full object-contain" />
+          </div>
+        ) : (
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              const f = e.dataTransfer.files?.[0];
+              if (f) void loadImage(f);
+            }}
+            className={`flex-1 min-h-0 flex items-center justify-center p-6 border-2 border-dashed m-3 rounded-lg text-sm ${
+              dragOver ? 'border-blue-500 bg-blue-600/10 text-blue-300' : 'border-neutral-700 text-neutral-500'
+            }`}
+          >
+            Drop QR image here, or click Upload / Paste
+          </div>
+        )}
       </div>
       <div className="flex flex-col min-h-0 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden">
         <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-neutral-400 border-b border-neutral-800 flex items-center justify-between">
