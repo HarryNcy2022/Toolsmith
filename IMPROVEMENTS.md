@@ -5,7 +5,7 @@ This is the companion to [`TOOL_PRIORITY.md`](./TOOL_PRIORITY.md), which covers 
 
 Every item below was traced to a real file and line. Where the suggestion is already satisfied, wrong, or needs a new dependency, I say so honestly rather than rubber-stamping it.
 
-> **Status — 2026-07-09:** All **P0** and **P1** items are implemented. The **P2** sweep delivered: G5 (resizable splitter via `react-resizable-panels` + `SplitPane`), G6 (multi-suggest clipboard with ranking + `pendingInput` handoff), QC2 (Swift per-language options JSON→Code), BI1 (output modes), color extras (RGBA/HSLA/HWB/CMYK), UT2 (ISO/RFC input), SC1 (line-by-line mode), HJ2 (JSX→HTML reverse), NB3/NB4 (enter-any-field + custom base), RS1 (advanced per-class char counts), LI2 (more generate types — names/email/url/tweets via faker). **New items added this round:** G7 (command palette arrow key bug), BI2 (paste image from clipboard), UT3 (now button + format samples), SC2 (multi-line input + display layout), plus refinements to G3 (sidebar resizable splitter, thinner), G5 (splitter margin), G6 (clipboard detect redesigned into Ctrl+K). Next focus: **bug fixes + high-value UX tweaks** in priority order below.
+> **Status — 2026-07-09:** All **P0** and **P1** items are implemented. The **P2** sweep delivered: G5 (resizable splitter via `react-resizable-panels` + `SplitPane`), G6 (multi-suggest clipboard with ranking + `pendingInput` handoff), QC2 (Swift per-language options JSON→Code), BI1 (output modes), color extras (RGBA/HSLA/HWB/CMYK), UT2 (ISO/RFC input), SC1 (line-by-line mode), HJ2 (JSX→HTML reverse), NB3/NB4 (enter-any-field + custom base), RS1 (advanced per-class char counts), LI2 (more generate types — names/email/url/tweets via faker). **Round 2 of P0/P1 items implemented:** G7 (command palette arrow key bug — root cause: `getTools()` unstable reference), G5 (splitter hairline `w-px` + wider `mx-3` grab margin), BI2 (paste image from clipboard), UT3 (mode-aware "Now" button; removed format samples for cleaner display), BI3 (relocate mode buttons from left to right panel). Next focus: **bug fixes + high-value UX tweaks** in priority order below.
 
 ---
 
@@ -57,10 +57,10 @@ Sorted by priority, then area.
 | 23 | SQL Format | Full-red error panel | S/M | ✅ **P1 done** | `IOPanel` renders red error body on `readOnly && error` |
 | 24 | SQL Format | Auto lower/upper case keywords + identifiers | S | ✅ **P1 done** | `keywordCase` + `identifierCase` selects; `sql-format.tsx` |
 | — | — | — | — | — | — |
-| **25** | **Global/UX** | **G7 — Command palette arrow keys don't navigate** | **S** | **P0** | Debug + fix keyboard event handling in `CommandPalette.tsx`; candidates: move handler to input prop, use ref for idx |
-| **26** | **Global/UX** | **G5 — SplitPane: more margin on left/right of separator** | **S** | **P1** | Add `mx-1` (8px) to the `<Separator>` in `SplitPane.tsx:78-90` for wider grab hit area; keep visual bar slim |
-| **27** | **Base64 Image** | **BI2 — Paste image from clipboard** | **S** | **P1** | Replicate QR1 pattern: `navigator.clipboard.read()` → image Blob → `fileToDataUrl()`; add "Paste" button |
-| **28** | **Unix Time** | **UT3 — "Now" button + format samples** | **S** | **P1** | Add "Now" button to set input to current epoch; show label always in epoch; add format-sample previews per row |
+| 25 | Global/UX | G7 — Command palette arrow keys don't navigate | S | ✅ **P0 done** | Root cause: `getTools()` unstable ref resets `idx` on every render. Fixed by memoizing `getTools()` with `useMemo` |
+| 26 | Global/UX | G5 — SplitPane: thin separator + wider grab area | S | ✅ **P1 done** | Separator `w-1.5`→`w-px` (1px hairline), margin `mx-1`→`mx-3` (12px), grip dot proportionally smaller |
+| 27 | Base64 Image | BI2 — Paste image from clipboard | S | ✅ **P1 done** | `navigator.clipboard.read()` → image Blob → `handleFile()`; "Paste" button in left header |
+| 28 | Unix Time | UT3 — Mode-aware "Now" button; removed format samples | S | ✅ **P1 done** | "Now" formats per inputMode (epoch/ISO/RFC); removed crowded `e.g.` sample lines |
 | 29 | **Global/UX** | G5 — Resizable splitter: migrate remaining ~13 inline tools + 8 grid tools to `&lt;SplitPane&gt;` | M | **P2** | Per-tool migration: swap hardcoded `grid`/`flex` for `&lt;SplitPane orientation="row"&gt;` |
 | **30** | **Global** | **G3 — Resizable sidebar with thin splitter** | **M** | **P2** | `&lt;PanelGroup&gt;` + `&lt;PanelResizeHandle&gt;` in `App.tsx`; thinner handle `w-px` → hover `w-1`; collapse button; persisted width |
 | **31** | **Global/UX** | **G6 — Clipboard detect redesigned: integrated into Ctrl+K** | **M** | **P2** | Remove header Detect button; on palette open + empty query, read clipboard and show "Detect as &lt;type&gt;" as first row |
@@ -81,7 +81,7 @@ Sorted by priority, then area.
 | 46 | Random String | RS1 — Advanced per-class character counts | M | **P2** | "Advanced" toggle reveals per-class count inputs |
 | 47 | Lorem | LI2 — Extra types (names/email/url/tweets) | M | **P2** | Needs wordlists or `@faker-js/faker`; `lorem-ipsum` lib can't do it |
 | 48 | Base64 Image | BI1 — Output modes (raw/data-url/css) | S/M | **P2** | `mode` state transforming `dataUrl`; `base64-image.tsx` |
-| **49** | **Base64 Image** | **BI3 — Relocate mode buttons to right panel** | **S** | **P1** | Move Preview/Raw/Data URL/CSS buttons from crowded left header to right panel action bar |
+| 49 | Base64 Image | BI3 — Relocate mode buttons to right panel | S | ✅ **P1 done** | Move Preview/Raw/Data URL/CSS buttons from crowded left header to right panel action bar |
 
 ---
 
@@ -140,8 +140,8 @@ Sorted by priority, then area.
 - **Plan (phased):**
   1. ~~Add `react-resizable-panels`; introduce a thin `<SplitPane orientation="row|col">` wrapper; apply to **markdown** first (the canonical case). Preserve the responsive stacking below `lg` (the lib supports conditional/collapsed).~~ ✅ **done**
   2. ~~Roll into `TransformTool` + `BeautifyTool` — two edits unlock ~all code-conversion + format tools at once.~~ ✅ **done**
-  3. **Separator margin fix:** The current Separator (`SplitPane.tsx:78-90`) has `w-1.5` (6px) with zero padding. Increase the grab area by adding `mx-1` (8px margin left+right) so the invisible hit zone is wider than the visible bar. The grip dot and background bar stay visually slim but the cursor + draggable region extends. Update hover transition accordingly.
-  4. Migrate the ~13 inline-layout tools + 8 grid tools incrementally (tech debt; do per-tool as touched). Each migration swaps the fixed `grid`/`flex` layout for `<SplitPane orientation="row" id="tool-id">`.
+   3. ~~**Separator margin fix:** The current Separator (`SplitPane.tsx:78-90`) has `w-1.5` (6px) with zero padding. Increase the grab area by adding `mx-1` (8px margin left+right) so the invisible hit zone is wider than the visible bar. The grip dot and background bar stay visually slim but the cursor + draggable region extends. Update hover transition accordingly.~~ ✅ **done — further refined to `w-px` (1px hairline) + `mx-3` (12px margin) + smaller grip dot**
+   4. Migrate the ~13 inline-layout tools + 8 grid tools incrementally (tech debt; do per-tool as touched). Each migration swaps the fixed `grid`/`flex` layout for `<SplitPane orientation="row" id="tool-id">`.
 - **Risks:** Margin on the separator reduces available space for the two panes (16px lost). For narrow tools this may be noticeable — consider `mx-0.5` (4px) as a compromise. `IOPanel`'s child `flex-1` and the grid's responsive `lg:grid-cols-1` stacking are the two behaviors the splitter must consciously replace/preserve — a naive swap breaks mobile and the existing 1:1 default. Vertical (top/bottom) orientation needs careful `min-h-0` handling or panes collapse.
 - **Effort:** M · **Priority:** P2
 
@@ -370,13 +370,8 @@ Custom, dayjs. `useState('UTC')` hardcoded; `TZS` is a fixed list. Input parsed 
 - **Plan:** detect non-numeric input → `dayjs(epoch).valueOf()` → derive ms/s, then feed the existing render path. dayjs parses ISO 8601 by default; for more formats add the `customParseFormat` plugin. Add an input-mode toggle (epoch ↔ date string).
 - **My take:** `agree`, localized change.
 
-#### UT3 — "Now" button + format samples  · S · **P1**
-- **Current state:** `unix-time.tsx:137` shows a static `"Now: {now}"` label (epoch seconds updated every 1 s via `setInterval`), but there is **no way to set the input to the current time** with one click. The user must manually type/paste the epoch number. `unix-time.tsx:62` initialises with `Math.floor(Date.now()/1000)` so a fresh open gives "now", but switching away and back loses it.
-- **Plan:**
-  1. Add a **"Now" button** next to the input that sets `setInput(String(now))` — the `now` state already refreshes every second via the `setInterval` at `unix-time.tsx:67-70`.
-  2. Below each formatted Row (ISO 8601, UTC, local, etc.), show a **small sample line** previewing what that format looks like for the current "now" value — greyed-out, e.g. `"2024-01-15T10:30:00Z"` under the ISO row. Helps users unfamiliar with each format name see the shape at a glance.
-  3. The `"Now: {now}"` label always displays in **epoch seconds format** regardless of the current input mode (epoch/ISO/RFC), so it stays a reliable reference.
-- **My take:** `agree` — quick win, high discoverability. The label is already there; the button is ~2 lines of JSX. Sample lines are another ~5 lines of JSX each.
+#### UT3 — Mode-aware "Now" button; removed format samples  · S · ✅ **P1 done**
+- **Implemented:** "Now" button (`unix-time.tsx:114-118`) inserts the correct format per active `inputMode`: epoch → `String(now)`, ISO → `dayjs().toISOString()`, RFC → `dayjs().format('ddd, DD MMM YYYY HH:mm:ss ZZ')`. Removed the `sample` prop from `Row` component and all `e.g.` lines — they made the display too packed. Verified: Epoch click sets `1783529432`, ISO click sets `2026-07-08T16:51:33.000Z`, RFC click sets `Thu, 09 Jul 2026 00:52:02 +0800`. No `e.g.` lines remain.
 
 ---
 
@@ -401,10 +396,9 @@ Custom, textarea + preview. `handleFile` reads → data URL; `decodeToImage` acc
 - **Plan:** add a `mode` state transforming the data URL for display/copy: `raw` strips the `data:…;base64,` prefix, `data-url` is the full string, `css` wraps as `background-image: url("…")`. Consider separating "source" from "formatted output" so the preview still works.
 - **My take:** `agree`.
 
-#### BI2 — Paste image from clipboard  · S · **P1**
-- **Current state:** `base64-image.tsx:82-99` has an "Upload" button + file input and drag-drop support (`onDragOver`/`onDrop`). But there is **no paste-from-clipboard** for actual image binary data. The QR Code Read tab (QR1, ✅ done) already has this via `navigator.clipboard.read()` → `image/*` ClipboardItem → Blob → `loadImage` — the exact pattern to replicate here.
-- **Plan:** add a "Paste" button alongside "Upload" that calls `navigator.clipboard.read()` (not `readText()`), finds an `image/*` item, reads it as Blob, and feeds `fileToDataUrl()` (already exists at `base64-image.tsx:5-11`). Reuse the same `handleFile()` path since `File` extends `Blob`. The `navigator.clipboard.read()` call for images requires a focused document — same constraint as QR1, acceptable for a desktop Electron app.
-- **My take:** `agree` — high user value, small change, proven pattern from QR1.
+#### BI2 — Paste image from clipboard  · S · ✅ **P1 done**
+- **Implemented:** Added `pasteFromClipboard()` at `base64-image.tsx:32-47` using `navigator.clipboard.read()` (not `readText()`) → finds `image/*` ClipboardItem → `getType()` → Blob → `new File(...)` → `handleFile()` (same path as Upload/Drop). A "Paste" button sits in the left panel header alongside "Upload".
+- **Note:** `navigator.clipboard.read()` for images requires a focused document — same constraint as QR1, acceptable for a desktop Electron app.
 
 ---
 
@@ -491,16 +485,10 @@ Custom, **already tabbed** (`generate` / `read`). Generate uses `qrcode`; Read u
 
 ---
 
-### G7 — Command palette: up/down arrow keys don't navigate  (new)
-- **Current state:** `CommandPalette.tsx:43-73` registers a `window` keydown listener when `open=true` that handles ArrowUp/ArrowDown/Enter/Escape. The handler calls `e.preventDefault()` on arrow keys and updates `idx` state. Despite this, **arrow keys do not move the selection in practice** — the cursor stays in the search input field or nothing happens.
-- **Root cause hypothesis:** The `useEffect` at line 44 registers a new listener every time `[open, filtered, idx, onClose, onSelect]` change. Since `idx` changes on every arrow press, the effect **tears down and re-registers the listener each time**, which causes a **captured-stale-closure** issue: the new listener captures the *updated* `idx` from the render that just ran the teardown/setup, so the next arrow press uses the correct idx... This should work. BUT there may be a timing issue with the `setTimeout(() => inputRef.current?.focus(), 50)` at line 39 — the input focus might steal/consume the arrow key events before the window handler fires, depending on event dispatch ordering in the browser. Another possibility: the `idx` setter and the listener registration produce a cycle: key press → setIdx → re-render → useEffect cleanup + re-register → next key press works. This should be fine, so the issue may be **event propagation** — the `<input>` element inside the palette might be calling `stopPropagation()` or the Electron environment may handle arrow keys differently.
-- **Plan:**
-  1. **Investigate first** — log the keydown event in the handler to see if ArrowUp/ArrowDown fire at all.
-  2. **Fix candidate A:** Move the key handler from `window` to the `<input>` element's `onKeyDown` prop directly — avoids any propagation issues and ties navigation to the focused input. The arrow keys would move cursor in the input (can't prevent that on a text input), but the index update + visual highlight change would still work.
-  3. **Fix candidate B:** If window handler fires but the visual doesn't update, check that `filtered.length` is > 0 and that `idx` state updates are being applied. The `setIdx` updater `(i) => Math.min(i + 1, filtered.length - 1)` looks correct.
-  4. **Fix candidate C:** If the re-render from `setIdx` tears down the effect before the next ArrowDown arrives, use `useRef` for `idx` instead of `useState` for the key handler closure, syncing a visual state from the ref.
-- **My take:** `bug`/`agree` — a core UX flow (keyboard navigation in the palette) is broken. Needs debugging first, then the simplest fix. Effort is likely **S** once root cause is identified.
-- **Effort:** S · **Priority:** P0
+### G7 — Command palette: up/down arrow keys don't navigate  ✅ **P0 done**
+- **Root cause (found by code tracing):** `registry.ts:10` `getTools()` calls `modules.map(...)` which returns a **new array on every invocation**. `CommandPalette.tsx:15` calls `getTools()` at the component body level (no memo), so every render gets a fresh `tools` reference. The `filtered` useMemo depends on `tools`, making `filtered` a new reference every render too — which triggers `useEffect(() => setIdx(0), [filtered])`, **resetting the selection index to 0** after every arrow key press.
+- **Fix:** Wrapped `getTools()` in `useMemo(() => getTools(), [])` at `CommandPalette.tsx:15`. Since `modules` array never changes during the app lifecycle, `tools` reference stays stable across re-renders. The `filtered` useMemo now only recomputes when `query` changes, and the `setIdx(0)` effect correctly fires only on actual filtering — not on arrow key presses.
+- **Verification:** 3×ArrowDown + Enter navigated from JSON Format/Validate to UUID/ULID Generator (Playwright-confirmed URL transition to `#/uuid-ulid`). ArrowUp moves selection back. Empty filter edge case handled gracefully.
 
 ---
 
