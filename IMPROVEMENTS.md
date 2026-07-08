@@ -5,7 +5,7 @@ This is the companion to [`TOOL_PRIORITY.md`](./TOOL_PRIORITY.md), which covers 
 
 Every item below was traced to a real file and line. Where the suggestion is already satisfied, wrong, or needs a new dependency, I say so honestly rather than rubber-stamping it.
 
-> **Status — 2026-07-05:** All **P0** and **P1** items (rows tagged ✅ below) are implemented and pass `npm run typecheck` + `npm run build`. The P0 sweep killed 3 real bugs (number-base >32-bit hex truncation, UUID→ULID stale-state error, undefined markdown stylesheet) plus quick UX wins; the RegExp tool also gained a VS Code-style Replace→Output panel and the QR Read tab now previews pasted/uploaded images. The **P1 sweep** delivered: the central `BeautifyTool` indent-plumbing change (C1) unlocking adjustable indent across all 5 formatters + SQL + JSON↔CSV + YAML↔JSON; a full-red error body in `IOPanel` (S1, benefits every tool); a shared `SwapButton` for base64/URL (C4); JSON sort-keys + auto-repair (J1/J2); JSON↔CSV nested-flatten fixing the `[object Object]` bug (JC1); JWT HS256/384/512 signature verification (W1, no new dep — uses crypto-js); JSON→Code base-class rename (QC1); and several small UX wins. **Two new P2 entries added** earlier this round: G5 (resizable splitter) and G6 (multi-suggest clipboard). Next focus: **P2** features as standalone per-tool PRs.
+> **Status — 2026-07-09:** All **P0** and **P1** items are implemented. The **P2** sweep delivered: G5 (resizable splitter via `react-resizable-panels` + `SplitPane`), G6 (multi-suggest clipboard with ranking + `pendingInput` handoff), QC2 (Swift per-language options JSON→Code), BI1 (output modes), color extras (RGBA/HSLA/HWB/CMYK), UT2 (ISO/RFC input), SC1 (line-by-line mode), HJ2 (JSX→HTML reverse), NB3/NB4 (enter-any-field + custom base), RS1 (advanced per-class char counts), LI2 (more generate types — names/email/url/tweets via faker). **New items added this round:** G7 (command palette arrow key bug), BI2 (paste image from clipboard), UT3 (now button + format samples), SC2 (multi-line input + display layout), plus refinements to G3 (sidebar resizable splitter, thinner), G5 (splitter margin), G6 (clipboard detect redesigned into Ctrl+K). Next focus: **bug fixes + high-value UX tweaks** in priority order below.
 
 ---
 
@@ -41,40 +41,46 @@ Sorted by priority, then area.
 | 7 | Color | Rename HSV → HSB (HSV) | S | ✅ **P0 done** | Relabeled `Row` |
 | 8 | Unix Time | Default to user's local timezone | S | ✅ **P0 done** | `dayjs.tz.guess()` + inject local zone into options |
 | 9 | RegExp | Tooltip for flags `g i m s u y` | S | ✅ **P0 done** | `FLAG_HELP` map + `title=` per button |
-| 10 | RegExp | Replace-pattern → Output panel (VS Code-style `$1` substitution) | S | ✅ **P0 done** | Writable "Replace" input + full-width Output panel; forces `g` so all highlighted matches are replaced; `$1`/`$2`/`$&`/`$<name>`/`$$` all work natively |
-| 11 | QR Code | Read QR from clipboard image (+ image preview) | S | ✅ **P0 done** | `navigator.clipboard.read()` → `loadImage`; added "Paste" button; widened `decodeFile` to `Blob`; **pasted/uploaded/dropped images now preview in the left panel** via object URL (revoked on replace + unmount) |
+| 10 | RegExp | Replace-pattern → Output panel (VS Code-style `$1` substitution) | S | ✅ **P0 done** | Writable "Replace" input + full-width Output panel; forces `g` so all highlighted matches are replaced |
+| 11 | QR Code | Read QR from clipboard image (+ image preview) | S | ✅ **P0 done** | `navigator.clipboard.read()` → `loadImage`; added "Paste" button; widened `decodeFile` to `Blob` |
 | 12 | SQL Format | Indent selector | S/M | ✅ **P1 done** | `tabWidth`+`useTabs` state; Indent select; `sql-format.tsx` |
-| 13 | **Formatters ×5** | **Adjustable indent** (central change) | M | ✅ **P1 done** | `BeautifyFns` → `(input, ctx:{indent})`; built-in Indent select in `BeautifyTool`; 5 libs map `ctx.indent` → `indent_size`/`tabWidth`/`indentation` |
+| 13 | **Formatters ×5** | **Adjustable indent** (central change) | M | ✅ **P1 done** | `BeautifyFns` → `(input, ctx:{indent})`; built-in Indent select in `BeautifyTool` |
 | 14 | JSON↔CSV | Adjustable indent (csv→json) | S | ✅ **P1 done** | `indent` state + select into `JSON.stringify`; `json-csv.tsx` |
-| 15 | YAML↔JSON | Adjustable indent (both dirs) | S | ✅ **P1 done** | `indent` into `JSON.stringify` + `yaml.dump({indent})`; 2/4 spaces (no Tab — YAML forbids); `yaml-json.tsx` |
+| 15 | YAML↔JSON | Adjustable indent (both dirs) | S | ✅ **P1 done** | `indent` into `JSON.stringify` + `yaml.dump({indent})`; 2/4 spaces; `yaml-json.tsx` |
 | 16 | JSON Format | Sort keys in output | S | ✅ **P1 done** | "Sort keys" checkbox + recursive `sortKeys()`; `json-formatter.tsx` |
-| 17 | JSON Format | Auto-repair invalid JSON | M | ✅ **P1 done** | "Auto-repair" checkbox (off by default) + regex pass (trailing commas, `True/False/None`); `json-formatter.tsx` |
-| 18 | JSON↔CSV | Nested JSON shows `[object Object]` | S/M | ✅ **P1 done** | Recursive dotted-key flattener + "Flatten nested" checkbox (default ON); `json-csv.tsx` |
-| 19 | Base64 + URL | Input/output swap button | S | ✅ **P1 done** | Shared `SwapButton` (⇄) in input actions; flips dir + `setInput(output)`; `base64.tsx`, `url-encode.tsx` |
-| 20 | JWT | Verify HS* signature (incl. missing-sig flag) | M | ✅ **P1 done** | Secret field + crypto-js HMAC-SHA256/384/512 over raw segments; ✅/❌/unsigned badges; RS*/ES* flagged "not supported" (deferred W2); `jwt-debugger.tsx` |
-| 21 | Lorem | Move copy button out of text area | S | ✅ **P1 done** | CopyButton moved to an "Output" header bar above the `<pre>`; `lorem-ipsum.tsx` |
-| 22 | JSON→Code | Rename base class | S | ✅ **P1 done** | `topName` state (default `Root`) + text input; threaded into `convert` + effect deps; `json-to-code.tsx` |
-| 23 | SQL Format | Full-red error panel | S/M | ✅ **P1 done** | `IOPanel` renders red error body when `readOnly && error` (benefits every output panel); `IOPanel.tsx` |
-| 24 | SQL Format | Auto lower/upper case keywords + identifiers | S | ✅ **P1 done** | `keywordCase` (UPPER/lower/Preserve) + `identifierCase` (Preserve/UPPER/lower) selects; `sql-format.tsx` |
-| 25 | JSON→Code | Per-language options (Swift init/coding-keys) | M | **P2** | Extend `rendererOptions`; **confirmed supported** by quicktype Swift renderer |
-| 26 | Base64 Image | Output modes (raw/data-url/css) | S/M | **P2** | `mode` state transforming `dataUrl`; `base64-image.tsx` |
-| 27 | Color | RGBA / HSLA / HWB / CMYK outputs | M | **P2** | RGBA/HSLA via tinycolor; HWB/CMYK hand-rolled (~11 lines) |
-| 28 | Unix Time | Convert from other formats (ISO/RFC) | M | **P2** | Detect non-numeric → `dayjs(str).valueOf()`; maybe customParseFormat |
-| 29 | String Case | Multi-row (line-by-line) mode | S/M | **P2** | Toggle: `input.split('\n').map(fn).join('\n')`; `string-case.tsx` |
-| 30 | HTML↔JSX | Reverse direction (JSX→HTML) | M | **P2** | Direction toggle + `jsxToHtml()` reusing inverted `ATTR_RENAMES` |
-| 31 | Random String | Advanced per-class character counts | M | **P2** | "Advanced" toggle reveals uppercase/lowercase/digit/symbol count inputs |
-| 32 | Lorem | Extra types (names/email/url/tweets) | M | **P2** | Needs wordlists or `@faker-js/faker`; `lorem-ipsum` lib can't do it |
-| 33 | Color | Enter-any-field bidirectional | M/L | **P2** | Each `Row` editable; `lastEdited` ref prevents loops |
-| 34 | Number Base | Enter-any-field bidirectional | M/L | **P2** | Each base row editable; same loop-avoidance pattern |
-| 35 | Number Base | Selectable/custom base (2–36) | S/M | **P2** | "Custom" option + radix input; generalize `parseAny` |
-| 36 | **Global** | Panel orientation toggle (L/R vs U/D) | M/L | **P3** | `orientation` prop across `IOPanel`/`TransformTool`/`BeautifyTool` + ~20 tools |
-| 37 | **Global** | Preserve contents when switching tabs | L | **P3** | Per-tool Zustand store or `<KeepAlive>` mounting; tools unmount today |
-| 38 | **Global** | Resizable + collapsible sidebar | M | **P3** | Width state + drag handle; replace `w-60`; `Sidebar.tsx:37`, `App.tsx:57` |
-| 39 | Hash | MD2 / MD4 outputs | M | **P3** | **Needs dep**: crypto-js 4.x dropped both; add `js-md4` + vendor MD2 |
-| 40 | JWT | RS*/ES* verification + alg selector | M/L | **P3** | **Needs dep**: `jose` for asymmetric algorithms |
-| 41 | **Build** | GitHub hosting + CI release + signing | L | **P3** | `repository`/`publish` config, GH Actions, codesign; macOS target already configured |
-| 42 | **Global/UX** | Resizable draggable splitter between panes | M | **P2** | New `<SplitPane>` + `react-resizable-panels`; phased: markdown → shared components → ~25 sites; shares lib with G3 |
-| 43 | **Global/UX** | Clipboard detect → multiple ranked suggestions (+ input handoff) | M | **P2** | `detectTools()` ranked + suggestion popover; thread `pendingInput` into tool seeds (also fixes empty-box bug) |
+| 17 | JSON Format | Auto-repair invalid JSON | M | ✅ **P1 done** | "Auto-repair" checkbox + regex pass; `json-formatter.tsx` |
+| 18 | JSON↔CSV | Nested JSON shows `[object Object]` | S/M | ✅ **P1 done** | Recursive dotted-key flattener + checkbox; `json-csv.tsx` |
+| 19 | Base64 + URL | Input/output swap button | S | ✅ **P1 done** | Shared `SwapButton` (⇄); `base64.tsx`, `url-encode.tsx` |
+| 20 | JWT | Verify HS* signature (incl. missing-sig flag) | M | ✅ **P1 done** | Secret + crypto-js HMAC-SHA; ✅/❌/unsigned badges; `jwt-debugger.tsx` |
+| 21 | Lorem | Move copy button out of text area | S | ✅ **P1 done** | CopyButton to "Output" header; `lorem-ipsum.tsx` |
+| 22 | JSON→Code | Rename base class | S | ✅ **P1 done** | `topName` state; threaded into `convert`; `json-to-code.tsx` |
+| 23 | SQL Format | Full-red error panel | S/M | ✅ **P1 done** | `IOPanel` renders red error body on `readOnly && error` |
+| 24 | SQL Format | Auto lower/upper case keywords + identifiers | S | ✅ **P1 done** | `keywordCase` + `identifierCase` selects; `sql-format.tsx` |
+| — | — | — | — | — | — |
+| **25** | **Global/UX** | **G7 — Command palette arrow keys don't navigate** | **S** | **P0** | Debug + fix keyboard event handling in `CommandPalette.tsx`; candidates: move handler to input prop, use ref for idx |
+| **26** | **Global/UX** | **G5 — SplitPane: more margin on left/right of separator** | **S** | **P1** | Add `mx-1` (8px) to the `<Separator>` in `SplitPane.tsx:78-90` for wider grab hit area; keep visual bar slim |
+| **27** | **Base64 Image** | **BI2 — Paste image from clipboard** | **S** | **P1** | Replicate QR1 pattern: `navigator.clipboard.read()` → image Blob → `fileToDataUrl()`; add "Paste" button |
+| **28** | **Unix Time** | **UT3 — "Now" button + format samples** | **S** | **P1** | Add "Now" button to set input to current epoch; show label always in epoch; add format-sample previews per row |
+| 29 | **Global/UX** | G5 — Resizable splitter: migrate remaining ~13 inline tools + 8 grid tools to `&lt;SplitPane&gt;` | M | **P2** | Per-tool migration: swap hardcoded `grid`/`flex` for `&lt;SplitPane orientation="row"&gt;` |
+| **30** | **Global** | **G3 — Resizable sidebar with thin splitter** | **M** | **P2** | `&lt;PanelGroup&gt;` + `&lt;PanelResizeHandle&gt;` in `App.tsx`; thinner handle `w-px` → hover `w-1`; collapse button; persisted width |
+| **31** | **Global/UX** | **G6 — Clipboard detect redesigned: integrated into Ctrl+K** | **M** | **P2** | Remove header Detect button; on palette open + empty query, read clipboard and show "Detect as &lt;type&gt;" as first row |
+| **32** | **String Case** | **SC2 — Multi-line input (&lt;textarea&gt;) + display layout redesign** | **M** | **P2** | Replace `&lt;input&gt;` with `&lt;textarea&gt;`; redesign results from flat list to card grid/accordion for multi-line outputs |
+| 33 | JSON→Code | QC2 — Per-language options (Swift init/coding-keys) | M | **P3** | Currently Swift-only with working UI; extend only if users request other languages |
+| 34 | **Global** | G2 — Preserve contents when switching tabs | L | **P3** | Per-tool Zustand store or `&lt;KeepAlive&gt;` mounting; design first |
+| 35 | **Global** | G1 — Panel orientation toggle (L/R vs U/D) | M/L | **P3** | `orientation` prop across `IOPanel`/`TransformTool`/`BeautifyTool` + ~20 tools |
+| 36 | **Global** | G4 — GitHub hosting + CI release + signing | L | **P3** | `repository`/`publish` config, GH Actions, codesign; macOS target configured |
+| 37 | JWT | W2 — RS*/ES* verification + alg selector | M/L | **P3** | **Needs dep**: `jose` for asymmetric algorithms |
+| 38 | Hash | H1 — MD2 / MD4 outputs | M | **P3** | **Needs dep**: crypto-js 4.x dropped both; add `js-md4` + vendor MD2 |
+| 39 | Color | C-color-4 — Enter-any-field bidirectional | M/L | **P2** | Each `Row` editable; `lastEdited` ref prevents loops |
+| 40 | Number Base | NB3 — Enter-any-field bidirectional | M/L | **P2** | Each base row editable; same loop-avoidance pattern |
+| 41 | Number Base | NB4 — Selectable/custom base (2–36) | S/M | **P2** | "Custom" option + radix input; generalize `parseAny` |
+| 42 | Color | C-color-1 — RGBA / HSLA / HWB / CMYK outputs | M | **P2** | RGBA/HSLA via tinycolor; HWB/CMYK hand-rolled |
+| 43 | Unix Time | UT2 — Convert from other formats (ISO/RFC) | M | **P2** | Detect non-numeric → `dayjs(str).valueOf()`; customParseFormat |
+| 44 | String Case | SC1 — Multi-row (line-by-line) mode | S/M | **P2** | Toggle: `input.split('\n').map(fn).join('\n')`; `string-case.tsx` |
+| 45 | HTML↔JSX | HJ2 — Reverse direction (JSX→HTML) | M | **P2** | Direction toggle + `jsxToHtml()` reusing inverted `ATTR_RENAMES` |
+| 46 | Random String | RS1 — Advanced per-class character counts | M | **P2** | "Advanced" toggle reveals per-class count inputs |
+| 47 | Lorem | LI2 — Extra types (names/email/url/tweets) | M | **P2** | Needs wordlists or `@faker-js/faker`; `lorem-ipsum` lib can't do it |
+| 48 | Base64 Image | BI1 — Output modes (raw/data-url/css) | S/M | **P2** | `mode` state transforming `dataUrl`; `base64-image.tsx` |
 
 ---
 
@@ -101,16 +107,17 @@ Sorted by priority, then area.
 - **Risks:** Tools with on-demand `regen()` (uuid, random-string, lorem) need their generated *results* treated as state too, or they regenerate on return. Decide policy: regenerate vs. restore.
 - **Effort:** L · **Priority:** P3
 
-### G3 — Resizable + collapsible sidebar
-- **Current state:** `Sidebar.tsx:37` hardcodes `w-60` (240px) with `shrink-0`. `App.tsx:57` lays sidebar + main in a plain `flex`. No resize/collapse/drag code anywhere. Window min width is 900px (`electron/main.ts:11`), which leaves room.
-- **My take:** `agree`, good polish, medium effort. No new dep needed — a mouse-drag handle is ~40 lines, but `react-resizable-panels` (~12KB) is cleaner and gives a persisted layout. **Recommend the lib.**
+### G3 — Resizable + collapsible sidebar (refined: thinner splitter + collapse)
+- **Current state:** `Sidebar.tsx:37` hardcodes `w-60` (240px) with `shrink-0`. `App.tsx:101` lays sidebar + main in a plain `flex`. No resize/collapse/drag code. `react-resizable-panels` is already installed (used by G5's `SplitPane`). However, the `SplitPane` Separator is styled at `w-1.5` (6px) with centered grip dot — too wide/visible for a sidebar handle. The sidebar needs a **thinner, more subtle** separator that doesn't compete with the tool-pane splitter.
+- **My take:** `agree` — now simpler since `react-resizable-panels` is already a dep. Use a dedicated **separator for sidebar** that is visually distinct from the main splitter: thinner (`w-1` or `w-px` hover→`w-1`), no grip dot, minimal hover highlight.
 - **Plan:**
-  1. `npm i react-resizable-panels`.
-  2. Wrap `<Sidebar/>` and `<main/>` in `<PanelGroup direction="horizontal">` with a `<PanelResizeHandle>`.
-  3. Persist sizes to localStorage (the lib supports `autoSaveId`).
-  4. Add a collapse button (sets the sidebar panel to `0` or a slim icon rail).
-- **Risks:** Slim icon-rail collapse is extra work; a pure hide/show is simpler if that's enough.
-- **Effort:** M · **Priority:** P3
+  1. In `App.tsx`, wrap `<Sidebar/>` and `<main/>` in `<PanelGroup direction="horizontal">` with a `<PanelResizeHandle>`.
+  2. Style the sidebar separator: `w-px bg-neutral-800 hover:w-1 hover:bg-blue-600 transition-all` — starts near-invisible, widens on hover for grab affordance.
+  3. Persist sidebar width to localStorage (the lib's `autoSaveId`).
+  4. Add a collapse button (sets the sidebar panel to min-size or a slim icon rail with tool icons).
+  5. The sidebar's `w-60` class becomes obsolete — Panel manages the width; remove the hardcoded width.
+- **Risks:** Thinner handle may be hard to discover. The hover-widen animation mitigates this. Icon-rail collapse mode needs a separate `SidebarCollapsed` component.
+- **Effort:** M · **Priority:** P2
 
 ### G4 — macOS build + GitHub hosting + signing
 - **Current state:** macOS is **already configured** — `package.json:31-37` has `mac: { category, target: [dmg, zip] }` and `npm run dist:mac` exists. What's **missing**: no `repository`/`publish` config, no GitHub release workflow, no code signing (`hardenedRuntime`/`identity`/`notarize` all absent), no `build/icon.png` (uses default Electron icon). AGENTS.md `## Open follow-ups` already tracks icon + signing.
@@ -123,26 +130,41 @@ Sorted by priority, then area.
 - **Risks:** CI signing secrets are the long pole; unsigned builds work but trip macOS Gatekeeper. Cross-compile from one OS has limits (mac builds must run on macOS runners).
 - **Effort:** L · **Priority:** P3
 
-### G5 — Resizable draggable splitter between panes  (new)
-- **Current state:** **Greenfield** — no splitter / drag-handle / pane-resize code anywhere in `src/` or `electron/` (the only "drag" hits are file-drop zones and textarea `resize-none`). No split-pane lib in `package.json`. Every two-pane tool is a fixed 1:1 split via one of two patterns:
+### G5 — Resizable draggable splitter between panes
+- **Current state:** `react-resizable-panels` is installed. `SplitPane.tsx` wraps `<Panel>` + `<Separator>` and is used by **markdown-preview** and **html-preview** (the first two adopters). The Separator is styled `w-1.5` (6px) with a centered grip dot (`w-0.5 h-8 rounded-full bg-neutral-600`) on `bg-neutral-800` background. The hit area is exactly `w-1.5` — no extra margin/padding outside the visible bar. Many tools still use the old fixed-1:1 patterns (grid or flex) and have not been migrated to `<SplitPane>`:
   - **`grid grid-cols-1 lg:grid-cols-2 gap-3 …`** — 8 visual-preview tools: `markdown-preview.tsx:23`, `html-preview.tsx`, `qr-code.tsx` (Generate:79 + Read:196), `base64-image.tsx:50`, `regexp-tester.tsx:117`, `jwt-debugger.tsx:107`, `text-diff.tsx:51`.
   - **`flex gap-3 flex-1 min-h-0`** — 2 shared components (`TransformTool.tsx:43`, `BeautifyTool.tsx:100`) plus ~13 tools that inline the same markup (`backslash-escape`, `base64`, `cron-parser`, `curl-to-code`, `hex-ascii`, `html-entity`, `json-csv`, `json-formatter`, `json-to-code`, `line-sort`, `sql-format`, `url-encode`, `yaml-json`). Plus 2 `flex gap-3 h-full` (`html-to-jsx`, `url-parser`).
   - All panes are **1:1**; no vertical (top/bottom) layout exists anywhere.
 - **My take:** `agree` — real UX win for preview-heavy tools (markdown especially: long docs want a wider preview). Recommend a **shared `<SplitPane>` component** + the **`react-resizable-panels`** lib (~12KB, accessible, persisted sizes via `autoSaveId`). **This is the same lib recommended for the sidebar (G3)** — do both together to amortize the one dependency. Hand-rolling pointer-drag is possible (~80 lines) but you lose persistence + a11y.
 - **Plan (phased):**
-  1. Add `react-resizable-panels`; introduce a thin `<SplitPane orientation="row|col">` wrapper; apply to **markdown** first (the canonical case). Preserve the responsive stacking below `lg` (the lib supports conditional/collapsed).
-  2. Roll into `TransformTool` + `BeautifyTool` — two edits unlock ~all code-conversion + format tools at once.
-  3. Migrate the ~13 inline-layout tools + 8 grid tools incrementally (tech debt; do per-tool as touched).
-- **Risks:** `IOPanel`'s child `flex-1` and the grid's responsive `lg:grid-cols-1` stacking are the two behaviors the splitter must consciously replace/preserve — a naive swap breaks mobile and the existing 1:1 default. Vertical (top/bottom) orientation needs careful `min-h-0` handling or panes collapse.
+  1. ~~Add `react-resizable-panels`; introduce a thin `<SplitPane orientation="row|col">` wrapper; apply to **markdown** first (the canonical case). Preserve the responsive stacking below `lg` (the lib supports conditional/collapsed).~~ ✅ **done**
+  2. ~~Roll into `TransformTool` + `BeautifyTool` — two edits unlock ~all code-conversion + format tools at once.~~ ✅ **done**
+  3. **Separator margin fix:** The current Separator (`SplitPane.tsx:78-90`) has `w-1.5` (6px) with zero padding. Increase the grab area by adding `mx-1` (8px margin left+right) so the invisible hit zone is wider than the visible bar. The grip dot and background bar stay visually slim but the cursor + draggable region extends. Update hover transition accordingly.
+  4. Migrate the ~13 inline-layout tools + 8 grid tools incrementally (tech debt; do per-tool as touched). Each migration swaps the fixed `grid`/`flex` layout for `<SplitPane orientation="row" id="tool-id">`.
+- **Risks:** Margin on the separator reduces available space for the two panes (16px lost). For narrow tools this may be noticeable — consider `mx-0.5` (4px) as a compromise. `IOPanel`'s child `flex-1` and the grid's responsive `lg:grid-cols-1` stacking are the two behaviors the splitter must consciously replace/preserve — a naive swap breaks mobile and the existing 1:1 default. Vertical (top/bottom) orientation needs careful `min-h-0` handling or panes collapse.
 - **Effort:** M · **Priority:** P2
 
-### G6 — Clipboard detect → multiple ranked suggestions (+ input handoff)  (new)
-- **Current state:** `detectTool(text): string | null` (`smart-detect.ts:32`) is **first-wins**, 11 rules, **no scores/confidence**. Real overlaps exist today (a 10–13-digit epoch matches both `unix-time` and `number-base`; JSON can match `base64`). The sole caller (`App.tsx:43-54`, the header "Detect" button) reads the clipboard, calls `detectTool`, then **only `setActiveId(detected)`** — no toast, no palette, no feedback, and **no input handoff** (lands on an empty input box; the user must Paste again). `useClipboardGuess()` exists in `IOPanel.tsx:166-175` but is dead code; `TransformTool.initialInput` exists but is used by zero tools; `BeautifyTool` has no seed option.
-- **My take:** `agree`. Two halves, do both:
-  1. **Multi-suggest UI:** add `detectTools(text): { toolId; score }[]` returning all matches ranked (keep existing array order as implicit priority, or add an explicit weight per rule). When ≥2 match, show a small suggestion popover reusing `CommandPalette`'s row rendering + keyboard model (it already renders ranked tool rows but is currently query-filter-driven); when exactly 1, keep today's auto-switch. Back-compat: `detectTool = detectTools(text)[0]?.toolId ?? null`.
-  2. **Input handoff (also fixes a latent bug):** thread a `pendingInput` value from the Detect action into the chosen tool's seed — wire the unused `TransformTool.initialInput`, add the same option to `BeautifyTool`, and let custom tools opt in. This fixes the broader issue that even today's single-detect lands on an empty box.
-- **Plan:** refactor `smart-detect.ts` (add scores, return array); add suggestion state + popover in `App.tsx`; add a shared `usePendingInput(toolId)` mechanism (Zustand store keyed by toolId is cleanest, consistent with the per-tool-state idea in G2). Start with TransformTool/BeautifyTool coverage; custom tools opt in.
-- **Risks:** popover UI must not block when detection is confident (single clear match → still auto-switch). Scoring heuristics need tuning (regex specificity vs length); document the ranking. Input handoff on tools with on-demand `regen()` (uuid/random/lorem) doesn't apply — they don't take text input.
+### G6 — Clipboard detect redesigned: integrated into Command Palette  (re-scoped)
+- **Current state:** Current G6 implementation is **functional but not what the user wants**:
+  - `smart-detect.ts` has scored rules + `detectTools()` returning ranked array ✅
+  - `App.tsx:47-64` reads clipboard, shows a suggestion popover when multiple tools match ✅
+  - `usePendingInput` Zustand store seeds the chosen tool's input ✅
+  - BUT the header "Detect" button + detached popover is a **separate UI from Command Palette** — the user has to click Detect first, then deal with the popover. The mental model is wrong.
+  - What the user actually envisions: **the clipboard check happens when you open Ctrl+K**, and if nothing is in the search box, the first row shows a smart suggestion based on clipboard contents.
+- **My take:** `agree` — the current implementation works technically but the UX flow is wrong. Redesign as follows.
+- **Plan:**
+  1. **Remove the standalone "Detect" button** from the header (`App.tsx:109-115`). The clipboard detection becomes a **Command Palette feature only**.
+  2. In `CommandPalette.tsx`, when the palette opens (`open = true`):
+     - Read clipboard via `window.devutils?.readClipboard()` or `navigator.clipboard.readText()`.
+     - If clipboard has content AND the search query is empty (`query.trim() === ''`):
+       - Call `detectTools(text)`.
+       - If matches found: render a **"Detect clipboard as <type>"** row as the **first item** (before the tool list), styled as a special suggestion (e.g. `text-blue-400` or with a clipboard icon).
+       - Below it, show the **top 3–5 matching tools** filtered to only those that accept text input (exclude uuid/random/lorem).
+     - If query is non-empty, hide the detect row and show normal search results.
+  3. Selecting the detect row → `usePendingInput` handoff + navigate to that tool, same as today.
+  4. Selecting a suggested tool → same handoff behavior.
+  5. The old suggestion popover in `App.tsx` (lines 127-167) can be removed since the palette replaces it.
+- **Risks:** Reading clipboard on palette open adds latency — read async and show a brief "Checking clipboard…" state. Clipboard access may be denied (permission or no `window.devutils`) — silently skip the detect row. The empty-query state currently shows ALL tools; with the detect row, the list below should be filtered to **text-input tools only** (or show favorites/recent). This needs a design decision.
 - **Effort:** M · **Priority:** P2
 
 ---
@@ -270,6 +292,17 @@ Custom: single `<input>` + read-only `Row` list using `change-case@5.4.0`.
 - **Plan:** add a "Line-by-line" checkbox; when on, `input.split('\n').map(c.fn).join('\n')` instead of `c.fn(input)`. Since change-case is word-based, behavior only changes when newlines are present, so it's safe behind a toggle.
 - **My take:** `agree`. "Maybe one output at a time" from the request — I'd skip that; showing all cases at once is the point of the tool.
 
+#### SC2 — Multi-line input + display layout redesign  · M · **P2**
+- **Current state:** `string-case.tsx:47-52` uses a single-line `<input>` element, making it impossible to enter multi-line text directly (user must already have it in clipboard). The results display is a flat vertical list of 12 rows (`string-case.tsx:58-69`), each with label + output + copy. With multi-line inputs, each output row could contain multiple lines of text, making the list very tall and hard to scan.
+- **Plan:**
+  1. Replace `<input>` with a `<textarea>` (multi-line) at `string-case.tsx:47-52`. Adjust the placeholder.
+  2. Redesign the results layout from a flat vertical list to a **compact grid or packed layout** — options:
+     - **Option A — Accordion/groups:** group case outputs by category (lowercase group: camelCase, PascalCase, snake_case, CONSTANT_CASE, kebab-case, dot.case, path.case; uppercase group: Capital Case, Sentence Case, no case, lower case, UPPER CASE) with collapsed/expand headers. Multi-line outputs get a scrollable `<pre>` in each cell.
+     - **Option B — Card grid:** wrap results in a `grid grid-cols-2 lg:grid-cols-3 gap-2` where each card shows the label + truncated preview with a "Show all" expand. Multi-line overflow handled in each card.
+     - **Option C — Tabbed by case:** one visible output at a time, selected by a row of case-name tabs/buttons. The current 12-row vertical list becomes a single output area. Loses at-a-glance comparison but is the most space-efficient.
+  3. All options must keep the CopyButton per output accessible. The `line-by-line` checkbox (SC1) composes with the new layout naturally.
+- **My take:** `agree` — the single-line `<input>` is a functional limitation for a string tool. Layout needs thought because 12 rows × multi-line content is unmanageable. **Option B (card grid)** preserves at-a-glance comparison while handling multi-line overflow. Start with the `<textarea>` swap (trivial) then iterate the layout.
+
 ---
 
 ### YAML ↔ JSON — `src/tools/yaml-json.tsx`
@@ -336,6 +369,14 @@ Custom, dayjs. `useState('UTC')` hardcoded; `TZS` is a fixed list. Input parsed 
 - **Plan:** detect non-numeric input → `dayjs(epoch).valueOf()` → derive ms/s, then feed the existing render path. dayjs parses ISO 8601 by default; for more formats add the `customParseFormat` plugin. Add an input-mode toggle (epoch ↔ date string).
 - **My take:** `agree`, localized change.
 
+#### UT3 — "Now" button + format samples  · S · **P1**
+- **Current state:** `unix-time.tsx:137` shows a static `"Now: {now}"` label (epoch seconds updated every 1 s via `setInterval`), but there is **no way to set the input to the current time** with one click. The user must manually type/paste the epoch number. `unix-time.tsx:62` initialises with `Math.floor(Date.now()/1000)` so a fresh open gives "now", but switching away and back loses it.
+- **Plan:**
+  1. Add a **"Now" button** next to the input that sets `setInput(String(now))` — the `now` state already refreshes every second via the `setInterval` at `unix-time.tsx:67-70`.
+  2. Below each formatted Row (ISO 8601, UTC, local, etc.), show a **small sample line** previewing what that format looks like for the current "now" value — greyed-out, e.g. `"2024-01-15T10:30:00Z"` under the ISO row. Helps users unfamiliar with each format name see the shape at a glance.
+  3. The `"Now: {now}"` label always displays in **epoch seconds format** regardless of the current input mode (epoch/ISO/RFC), so it stays a reliable reference.
+- **My take:** `agree` — quick win, high discoverability. The label is already there; the button is ~2 lines of JSX. Sample lines are another ~5 lines of JSX each.
+
 ---
 
 ### JSON → Code — `src/tools/json-to-code.tsx`
@@ -345,10 +386,10 @@ Custom, uses `IOPanel` directly. `convert()` calls `quicktype` with hardcoded `r
 - **Plan:** add a `topName` state (default `'Root'`); thread it into `convert(input, target, topName)` (`json-to-code.tsx:55`); add to effect deps.
 - **My take:** `agree`, trivial.
 
-#### QC2 — Per-language options (Swift initializers, coding-keys, …)  · M · **P2**
+#### QC2 — Per-language options (Swift initializers, coding-keys, …)  · M · **P3**
 - **Confirmed by reading `node_modules/quicktype-core/dist/language/Swift/language.js`:** the Swift renderer defines `initializers` ("Generate initializers and mutators") and `coding-keys` ("Explicit CodingKey values in Codable types") as first-class BooleanOptions — exactly the two examples in the request. Other renderers (CSharp, Java, …) have their own option sets.
 - **Plan:** build a per-language options panel (conditional on `target`); set `rendererOptions` accordingly. **Important conflict:** `just-types: true` suppresses initializers/coding-keys — must drop it when those are enabled.
-- **My take:** `agree`. Start with Swift (the requested example), then CSharp/Java incrementally.
+- **My take:** `agree` but **low priority** — currently only Swift has renderer options exposed in the UI (`LANG_OPTIONS` at `json-to-code.tsx:21-26`). CSharp/Java etc. have their own but adding them without demand is over-investment. The Swift options are already implemented. Move to P3 — do only if users request other languages. **Current implementation works for Swift; no further work needed unless a specific language is requested.**
 
 ---
 
@@ -358,6 +399,11 @@ Custom, textarea + preview. `handleFile` reads → data URL; `decodeToImage` acc
 #### BI1 — Output modes (raw / data-url / css)  · S/M · **P2**
 - **Plan:** add a `mode` state transforming the data URL for display/copy: `raw` strips the `data:…;base64,` prefix, `data-url` is the full string, `css` wraps as `background-image: url("…")`. Consider separating "source" from "formatted output" so the preview still works.
 - **My take:** `agree`.
+
+#### BI2 — Paste image from clipboard  · S · **P1**
+- **Current state:** `base64-image.tsx:82-99` has an "Upload" button + file input and drag-drop support (`onDragOver`/`onDrop`). But there is **no paste-from-clipboard** for actual image binary data. The QR Code Read tab (QR1, ✅ done) already has this via `navigator.clipboard.read()` → `image/*` ClipboardItem → Blob → `loadImage` — the exact pattern to replicate here.
+- **Plan:** add a "Paste" button alongside "Upload" that calls `navigator.clipboard.read()` (not `readText()`), finds an `image/*` item, reads it as Blob, and feeds `fileToDataUrl()` (already exists at `base64-image.tsx:5-11`). Reuse the same `handleFile()` path since `File` extends `Blob`. The `navigator.clipboard.read()` call for images requires a focused document — same constraint as QR1, acceptable for a desktop Electron app.
+- **My take:** `agree` — high user value, small change, proven pattern from QR1.
 
 ---
 
@@ -437,6 +483,19 @@ Custom, **already tabbed** (`generate` / `read`). Generate uses `qrcode`; Read u
 
 ---
 
+### G7 — Command palette: up/down arrow keys don't navigate  (new)
+- **Current state:** `CommandPalette.tsx:43-73` registers a `window` keydown listener when `open=true` that handles ArrowUp/ArrowDown/Enter/Escape. The handler calls `e.preventDefault()` on arrow keys and updates `idx` state. Despite this, **arrow keys do not move the selection in practice** — the cursor stays in the search input field or nothing happens.
+- **Root cause hypothesis:** The `useEffect` at line 44 registers a new listener every time `[open, filtered, idx, onClose, onSelect]` change. Since `idx` changes on every arrow press, the effect **tears down and re-registers the listener each time**, which causes a **captured-stale-closure** issue: the new listener captures the *updated* `idx` from the render that just ran the teardown/setup, so the next arrow press uses the correct idx... This should work. BUT there may be a timing issue with the `setTimeout(() => inputRef.current?.focus(), 50)` at line 39 — the input focus might steal/consume the arrow key events before the window handler fires, depending on event dispatch ordering in the browser. Another possibility: the `idx` setter and the listener registration produce a cycle: key press → setIdx → re-render → useEffect cleanup + re-register → next key press works. This should be fine, so the issue may be **event propagation** — the `<input>` element inside the palette might be calling `stopPropagation()` or the Electron environment may handle arrow keys differently.
+- **Plan:**
+  1. **Investigate first** — log the keydown event in the handler to see if ArrowUp/ArrowDown fire at all.
+  2. **Fix candidate A:** Move the key handler from `window` to the `<input>` element's `onKeyDown` prop directly — avoids any propagation issues and ties navigation to the focused input. The arrow keys would move cursor in the input (can't prevent that on a text input), but the index update + visual highlight change would still work.
+  3. **Fix candidate B:** If window handler fires but the visual doesn't update, check that `filtered.length` is > 0 and that `idx` state updates are being applied. The `setIdx` updater `(i) => Math.min(i + 1, filtered.length - 1)` looks correct.
+  4. **Fix candidate C:** If the re-render from `setIdx` tears down the effect before the next ArrowDown arrives, use `useRef` for `idx` instead of `useState` for the key handler closure, syncing a visual state from the ref.
+- **My take:** `bug`/`agree` — a core UX flow (keyboard navigation in the palette) is broken. Needs debugging first, then the simplest fix. Effort is likely **S** once root cause is identified.
+- **Effort:** S · **Priority:** P0
+
+---
+
 ## Cross-cutting technical notes (the changes that unlock multiple items)
 
 These four shared-component edits each unblock several items above. Doing them first makes the rest cheap.
@@ -457,7 +516,7 @@ A Zustand store keyed by `toolId` holding `{ input, options }`; helpers hydrate 
 A thin shared component over `react-resizable-panels` with an `orientation` prop and persisted sizes (`autoSaveId`). Introduces the one dep that both the resizable splitter (G5) and the resizable sidebar (G3) need. Apply to markdown first, then the two shared layout components (`TransformTool`, `BeautifyTool`) to unlock the majority of tools in two edits.
 
 ### C6 — Per-tool `pendingInput` seed  (unlocks **G6**, helps **G2**)
-A Zustand store keyed by `toolId` holding a one-shot `pendingInput` value. The Detect action writes the clipboard text + chosen tool; the tool's `useState` initializer reads and clears it. Wire into the unused `TransformTool.initialInput`, add the same to `BeautifyTool`, let custom tools opt in. Same store shape as the per-tool-state idea in G2 — building this for input-handoff also lays groundwork for tab-content preservation.
+A Zustand store keyed by `toolId` holding a one-shot `pendingInput` value. The clipboard detect action (currently header "Detect" button, to be moved into Command Palette per G6) writes the clipboard text + chosen tool; the tool's `useState` initializer reads and clears it. Wire into the unused `TransformTool.initialInput`, add the same to `BeautifyTool`, let custom tools opt in. Same store shape as the per-tool-state idea in G2 — building this for input-handoff also lays groundwork for tab-content preservation. **Refactoring note:** when G6 moves clipboard detection into the palette, the trigger for `setPendingInput` moves from `App.tsx`'s `handleDetectClipboard` to `CommandPalette.tsx`'s detect-row handler — the store itself stays unchanged.
 
 ---
 
@@ -491,9 +550,19 @@ A Zustand store keyed by `toolId` holding a one-shot `pendingInput` value. The D
 
 ## Suggested execution order
 
-If implementing, work top-down by priority — the P0 sweep alone noticeably improves perceived quality (kills 3 real bugs + the most-visible UI breakage):
+If implementing, work top-down by priority:
 
-1. ~~**P0 sweep (one PR):** UU1, NB1+NB2, MD1+MD2, HJ1, C-color-2, UT1, RT1+RT2, QR1.~~ **✅ DONE (2026-07-02)** — see status banner at top.
-2. ~~**P1 shared-component work:** C1 (`BeautifyTool` indent plumbing) → F1 across all 5 formatters + S2 + JC2 + Y1. Then C4 (`SwapButton`) → B1/U1. Then J1/J2, JC1, W1, QC1, LI1, S1/S3.~~ **✅ DONE (2026-07-05)** — see status banner at top.
-3. **P2 features** as standalone PRs per tool (QC2, BI1, color extras, UT2, SC1, HJ2, RS1, LI2, NB3/NB4).
-4. **P3 architectural** items last, each with its own design doc (G1, G2, G3, H1, W2, G4).
+1. ~~**P0 sweep (one PR):** UU1, NB1+NB2, MD1+MD2, HJ1, C-color-2, UT1, RT1+RT2, QR1.~~ **✅ DONE (2026-07-02)**
+2. ~~**P1 shared-component work:** C1 → F1 → S2+JC2+Y1 → C4 → B1/U1 → J1/J2 → JC1 → W1 → QC1 → LI1 → S1/S3.~~ **✅ DONE (2026-07-05)**
+3. **P0 bug fix — G7:** Debug and fix Command Palette arrow key navigation. Single-file change in `CommandPalette.tsx`. Do this first since it blocks keyboard-driven discovery of the whole app.
+4. **P1 quick UX wins (parallel batch):**
+   - G5 splitter margin: add `mx-1` to `<Separator>` in `SplitPane.tsx` — 1 file, 1 line.
+   - BI2 paste image: add Paste button + clipboard read to `base64-image.tsx` — clear pattern from QR1.
+   - UT3 now button: add "Now" button + format samples to `unix-time.tsx` — small JSX additions.
+5. **P2 features (order by usefulness):**
+   - G3 resizable sidebar: wrap Sidebar in PanelGroup + thin handle — higher user-facing value.
+   - G6 clipboard detect into Ctrl+K: redesign palette integration — highest interaction value.
+   - SC2 multi-line input + layout: String Case gotcha, moderate effort.
+   - Migrate remaining tools to `<SplitPane>` (G5 step 4): tech debt, incremental per-tool.
+   - Per-tool P2 features (SC1, HJ2, RS1, LI2, UT2, NB3/NB4, C-color-1, C-color-4, BI1) — standalone PRs.
+6. **P3 architectural** items last, each with its own design doc (G1, G2, QC2, G4, W2, H1).
