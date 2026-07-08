@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -38,7 +38,9 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-3 py-1.5 border-b border-neutral-800/60 last:border-0">
       <div className="w-40 shrink-0 text-xs uppercase tracking-wide text-neutral-500">{label}</div>
-      <code className="flex-1 text-sm text-neutral-200 font-mono break-all">{value}</code>
+      <div className="flex-1">
+        <code className="block text-sm text-neutral-200 font-mono break-all">{value}</code>
+      </div>
       <CopyButton getText={() => value} />
     </div>
   );
@@ -106,6 +108,16 @@ function Component() {
           className="flex-1 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded text-sm font-mono text-neutral-200 focus:outline-none focus:border-neutral-600"
           placeholder={PLACEHOLDERS[inputMode]}
         />
+        <button
+          onClick={() => {
+            if (inputMode === 'epoch') setInput(String(now));
+            else if (inputMode === 'iso') setInput(dayjs(now * 1000).toISOString());
+            else setInput(dayjs(now * 1000).format('ddd, DD MMM YYYY HH:mm:ss ZZ'));
+          }}
+          className="px-2.5 py-1.5 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200"
+        >
+          Now
+        </button>
         <div className="flex rounded-lg overflow-hidden border border-neutral-700">
           {MODES.map((m) => (
             <button
