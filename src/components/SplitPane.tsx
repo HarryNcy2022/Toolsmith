@@ -79,12 +79,13 @@ export function SplitPane({
         className={[
           'shrink-0 bg-neutral-800 hover:bg-blue-600 transition-colors',
           'flex items-center justify-center',
-          orientation === 'row' ? 'w-1.5 cursor-col-resize' : 'h-1.5 cursor-row-resize',
+          orientation === 'row' ? 'w-px cursor-col-resize' : 'h-px cursor-row-resize',
+          orientation === 'row' ? 'mx-3' : 'my-3',
         ].join(' ')}
       >
         <div
           className={`rounded-full bg-neutral-600 ${
-            orientation === 'row' ? 'w-0.5 h-8' : 'w-8 h-0.5'
+            orientation === 'row' ? 'w-px h-6' : 'w-6 h-px'
           }`}
         />
       </Separator>
