@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { usePendingInput } from '../lib/pending-input';
 import { IOPanel, PasteButton, ClearButton } from './IOPanel';
 import { registerTool } from '../lib/registry';
 import type { ToolMeta } from '../types';
+import { SplitPane } from './SplitPane';
 
 export interface BeautifyOptions {
   inputPlaceholder?: string;
@@ -38,7 +40,22 @@ export function defineBeautifyTool(
   options: BeautifyOptions = {}
 ): void {
   function Component() {
-    const [input, setInput] = useState('');
+    const [input, setInput] = useState(() => {
+      const pending = usePendingInput.getState().consumePendingInput(meta.id);
+      return pending ?? '';
+    });
+    // G6: consume pending input even when component stays mounted (same-tool detect)
+    useEffect(() => {
+      const pending = usePendingInput.getState().consumePendingInput(meta.id);
+      if (pending !== null) setInput(pending);
+      const unsub = usePendingInput.subscribe((state, prev) => {
+        if (state.pending[meta.id] !== undefined && state.pending[meta.id] !== prev.pending[meta.id]) {
+          const val = usePendingInput.getState().consumePendingInput(meta.id);
+          if (val !== null) setInput(val);
+        }
+      });
+      return unsub;
+    }, []);
     const [mode, setMode] = useState<'beautify' | 'minify'>('beautify');
     const [indent, setIndent] = useState<IndentOption>(2);
     const [output, setOutput] = useState('');
@@ -123,7 +140,7 @@ export function defineBeautifyTool(
             </select>
           </label>
         </div>
-        <div className="flex gap-3 flex-1 min-h-0">
+        <SplitPane orientation="row" id={meta.id}>
           <IOPanel
             title="Input"
             value={input}
@@ -145,7 +162,7 @@ export function defineBeautifyTool(
             extensions={options.extensions}
             error={error}
           />
-        </div>
+        </SplitPane>
       </div>
     );
   }

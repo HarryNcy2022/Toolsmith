@@ -31,10 +31,15 @@ const CASES: { label: string; fn: (s: string) => string }[] = [
 
 function Component() {
   const [input, setInput] = useState('');
+  const [lineByLine, setLineByLine] = useState(false);
 
   const results = useMemo(
-    () => CASES.map((c) => ({ ...c, out: input ? c.fn(input) : '' })),
-    [input]
+    () =>
+      CASES.map((c) => ({
+        ...c,
+        out: input ? (lineByLine && input.includes('\n') ? input.split('\n').map((l) => c.fn(l)).join('\n') : c.fn(input)) : ''
+      })),
+    [input, lineByLine]
   );
 
   return (
@@ -45,6 +50,11 @@ function Component() {
         placeholder="Enter some text…"
         className="shrink-0 px-3 py-2 bg-neutral-900/50 border border-neutral-800 rounded-lg text-sm font-mono text-neutral-200 focus:outline-none focus:border-neutral-600"
       />
+      <label className="flex items-center gap-2 text-xs text-neutral-400 cursor-pointer shrink-0">
+        <input type="checkbox" checked={lineByLine} onChange={(e) => setLineByLine(e.target.checked)}
+          className="rounded border-neutral-700 bg-neutral-800" />
+        Line-by-line
+      </label>
       <div className="flex-1 min-h-0 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-auto">
         {results.map(({ label, out }) => (
           <div

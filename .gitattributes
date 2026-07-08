@@ -1,0 +1,13 @@
+* text=auto
+
+# Binary files
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.woff2 binary
+*.eot binary
+
+# Generated/build outputs
+out/ -text
+node_modules/ -text

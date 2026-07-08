@@ -16,7 +16,18 @@ function Component() {
   const [preview, setPreview] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [mode, setMode] = useState<'preview' | 'raw' | 'data-url' | 'css'>('preview');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function getFormattedOutput(): string {
+    if (!dataUrl) return '';
+    switch (mode) {
+      case 'raw': return dataUrl.replace(/^data:.*?;base64,/, '');
+      case 'data-url': return dataUrl;
+      case 'css': return `background-image: url("${dataUrl}")`;
+      default: return dataUrl; // preview — not used as text, fallback
+    }
+  }
 
   async function handleFile(file: File) {
     setError(null);
@@ -52,7 +63,22 @@ function Component() {
         <div className="flex flex-col min-h-0 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden">
           <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-neutral-400 border-b border-neutral-800 flex items-center justify-between">
             <span>Image / Data URL</span>
-            <div className="flex gap-1.5">
+            <div className="flex gap-1.5 items-center">
+              <div className="flex gap-0.5">
+                {(['preview', 'raw', 'data-url', 'css'] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setMode(m)}
+                    className={`px-1.5 py-1 text-[11px] rounded ${
+                      mode === m
+                        ? 'bg-blue-600 text-white'
+                        : 'border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200'
+                    }`}
+                  >
+                    {m === 'data-url' ? 'Data URL' : m.charAt(0).toUpperCase() + m.slice(1)}
+                  </button>
+                ))}
+              </div>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="px-2.5 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200"
@@ -105,23 +131,36 @@ function Component() {
           )}
         </div>
 
-        {/* preview */}
+        {/* output: preview / raw / data-url / css */}
         <div className="flex flex-col min-h-0 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden">
-          <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-neutral-400 border-b border-neutral-800">
-            Preview
+          <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-neutral-400 border-b border-neutral-800 flex items-center justify-between">
+            <span>{mode === 'preview' ? 'Preview' : mode === 'data-url' ? 'Data URL' : mode.charAt(0).toUpperCase() + mode.slice(1)}</span>
+            {mode !== 'preview' && <CopyButton getText={() => getFormattedOutput()} disabled={!dataUrl} />}
           </div>
-          <div className="flex-1 min-h-0 overflow-auto flex items-center justify-center p-4 bg-[repeating-conic-gradient(#262626_0%_25%,#1a1a1a_0%_50%)] bg-[length:20px_20px]">
-            {preview ? (
-              <img
-                src={preview}
-                alt="preview"
-                className="max-w-full max-h-full object-contain"
-                onError={() => setError('Could not render image from this data URL')}
-              />
-            ) : (
-              <span className="text-sm text-neutral-600">No image</span>
-            )}
-          </div>
+          {mode === 'preview' ? (
+            <div className="flex-1 min-h-0 overflow-auto flex items-center justify-center p-4 bg-[repeating-conic-gradient(#262626_0%_25%,#1a1a1a_0%_50%)] bg-[length:20px_20px]">
+              {preview ? (
+                <img
+                  src={preview}
+                  alt="preview"
+                  className="max-w-full max-h-full object-contain"
+                  onError={() => setError('Could not render image from this data URL')}
+                />
+              ) : (
+                <span className="text-sm text-neutral-600">No image</span>
+              )}
+            </div>
+          ) : (
+            <div className="flex-1 min-h-0 overflow-auto p-3">
+              {dataUrl ? (
+                <pre className="text-xs font-mono text-neutral-300 whitespace-pre-wrap break-all leading-relaxed">
+                  {getFormattedOutput()}
+                </pre>
+              ) : (
+                <span className="text-sm text-neutral-600">No image</span>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

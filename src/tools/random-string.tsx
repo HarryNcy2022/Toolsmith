@@ -12,6 +12,13 @@ const PRESETS: Record<string, string> = {
   symbols: '!@#$%^&*()-_=+[]{};:,.?/'
 };
 
+const CHAR_CLASSES = {
+  uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  lowercase: 'abcdefghijklmnopqrstuvwxyz',
+  digits: '0123456789',
+  symbols: '!@#$%^&*()_+-=[]{}|;:,.<>?/~`',
+} as const;
+
 function randomFrom(charset: string, len: number): string {
   const out = new Array(len);
   const buf = new Uint32Array(len);
@@ -26,11 +33,56 @@ function Component() {
   const [length, setLength] = useState(32);
   const [count, setCount] = useState(5);
   const [results, setResults] = useState<string[]>([]);
+  const [advanced, setAdvanced] = useState(false);
+  const [upperMin, setUpperMin] = useState(0);
+  const [lowerMin, setLowerMin] = useState(0);
+  const [digitMin, setDigitMin] = useState(0);
+  const [symMin, setSymMin] = useState(0);
+
+  function shuffle(s: string): string {
+    const arr = s.split('');
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr.join('');
+  }
 
   function regen() {
     const charset = custom || PRESETS[preset];
     if (!charset) return;
-    setResults(Array.from({ length: count }, () => randomFrom(charset, length)));
+    if (advanced && !custom) {
+      setResults(Array.from({ length: count }, () => {
+        let upperCount = upperMin;
+        let lowerCount = lowerMin;
+        let digitCount = digitMin;
+        let symCount = symMin;
+        const sum = upperCount + lowerCount + digitCount + symCount;
+        let remaining: number;
+        if (sum > length) {
+          const scale = length / sum;
+          upperCount = Math.floor(upperCount * scale);
+          lowerCount = Math.floor(lowerCount * scale);
+          digitCount = Math.floor(digitCount * scale);
+          symCount = Math.floor(symCount * scale);
+          remaining = length - (upperCount + lowerCount + digitCount + symCount);
+        } else {
+          remaining = length - sum;
+        }
+        const parts: string[] = [];
+        if (upperCount > 0) parts.push(randomFrom(CHAR_CLASSES.uppercase, upperCount));
+        if (lowerCount > 0) parts.push(randomFrom(CHAR_CLASSES.lowercase, lowerCount));
+        if (digitCount > 0) parts.push(randomFrom(CHAR_CLASSES.digits, digitCount));
+        if (symCount > 0) parts.push(randomFrom(CHAR_CLASSES.symbols, symCount));
+        if (remaining > 0) {
+          const all = CHAR_CLASSES.uppercase + CHAR_CLASSES.lowercase + CHAR_CLASSES.digits + CHAR_CLASSES.symbols;
+          parts.push(randomFrom(all, remaining));
+        }
+        return shuffle(parts.join(''));
+      }));
+    } else {
+      setResults(Array.from({ length: count }, () => randomFrom(charset, length)));
+    }
   }
 
   return (
@@ -62,6 +114,17 @@ function Component() {
             className="w-40 px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded text-neutral-200"
           />
         </label>
+        {!custom && (
+          <label className="flex items-center gap-2 text-xs text-neutral-400 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={advanced}
+              onChange={(e) => setAdvanced(e.target.checked)}
+              className="accent-blue-600"
+            />
+            Advanced
+          </label>
+        )}
         <label className="flex flex-col gap-1 text-xs text-neutral-400">
           Length
           <input
@@ -91,6 +154,55 @@ function Component() {
           Generate
         </button>
       </div>
+
+      {advanced && !custom && (
+        <div className="flex flex-wrap items-end gap-3 shrink-0">
+          <label className="flex flex-col gap-1 text-xs text-neutral-400">
+            Uppercase min
+            <input
+              type="number"
+              min={0}
+              max={length}
+              value={upperMin}
+              onChange={(e) => setUpperMin(Math.max(0, Math.min(length, Number(e.target.value) || 0)))}
+              className="w-16 px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded text-neutral-200"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-neutral-400">
+            Lowercase min
+            <input
+              type="number"
+              min={0}
+              max={length}
+              value={lowerMin}
+              onChange={(e) => setLowerMin(Math.max(0, Math.min(length, Number(e.target.value) || 0)))}
+              className="w-16 px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded text-neutral-200"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-neutral-400">
+            Digits min
+            <input
+              type="number"
+              min={0}
+              max={length}
+              value={digitMin}
+              onChange={(e) => setDigitMin(Math.max(0, Math.min(length, Number(e.target.value) || 0)))}
+              className="w-16 px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded text-neutral-200"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-neutral-400">
+            Symbols min
+            <input
+              type="number"
+              min={0}
+              max={length}
+              value={symMin}
+              onChange={(e) => setSymMin(Math.max(0, Math.min(length, Number(e.target.value) || 0)))}
+              className="w-16 px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded text-neutral-200"
+            />
+          </label>
+        </div>
+      )}
 
       <div className="flex-1 min-h-0 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-auto">
         {results.length === 0 ? (

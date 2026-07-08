@@ -1,37 +1,52 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { registerTool } from '../lib/registry';
 import { CopyButton } from '../components/CopyButton';
 
 function parseAny(input: string, base: number): bigint | null {
-  const s = input.trim().replace(/^0[box]/i, '').replace(/_/g, '');
+  const s = input.trim().replace(/_/g, '');
   if (!s) return null;
-  // Per-base digit validation, then parse via BigInt on a prefixed literal.
-  // Using BigInt (not parseInt) avoids the 32-bit truncation that silently
-  // broke large hex values before; the 0x/0o/0b prefix is re-added because
-  // line above strips a leading 0b/0o/0x for display normalization.
-  const digitRe: Record<number, RegExp> = {
-    16: /^-?[0-9a-f]+$/i,
-    10: /^-?\d+$/,
-    8: /^-?[0-7]+$/,
-    2: /^-?[01]+$/
-  };
-  const prefix: Record<number, string> = { 16: '0x', 8: '0o', 2: '0b' };
-  const re = digitRe[base];
-  if (!re || !re.test(s)) return null;
-  try {
-    if (base === 10) return BigInt(s);
-    const neg = s.startsWith('-');
-    return BigInt((neg ? '-' : '') + prefix[base] + (neg ? s.slice(1) : s));
-  } catch {
-    return null;
+  const digits = '0123456789abcdefghijklmnopqrstuvwxyz';
+  let result = 0n;
+  const str = s.toLowerCase();
+  const start = str[0] === '-' ? 1 : 0;
+  if (start === 1 && str.length < 2) return null;
+  for (let i = start; i < str.length; i++) {
+    const digit = digits.indexOf(str[i]);
+    if (digit === -1 || digit >= base) return null;
+    result = result * BigInt(base) + BigInt(digit);
   }
+  return str[0] === '-' ? -result : result;
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function hexToBytes(hex: string): string {
+  const padded = hex.length % 2 ? '0' + hex : hex;
+  const bytes = padded.match(/.{1,2}/g) ?? [];
+  return bytes.join(' ');
+}
+
+function EditableRow({
+  label,
+  value,
+  onChange,
+  readOnly,
+}: {
+  label: string;
+  value: string;
+  onChange?: (v: string) => void;
+  readOnly?: boolean;
+}) {
   return (
     <div className="flex items-center gap-3 py-2 border-b border-neutral-800/60 last:border-0">
       <div className="w-20 shrink-0 text-xs uppercase tracking-wide text-neutral-500">{label}</div>
-      <code className="flex-1 text-sm font-mono text-neutral-200 break-all">{value}</code>
+      {readOnly ? (
+        <div className="flex-1 px-2 py-1 text-sm font-mono text-neutral-200">{value}</div>
+      ) : (
+        <input
+          value={value}
+          onChange={(e) => onChange?.(e.target.value)}
+          className="flex-1 px-2 py-1 bg-neutral-900 border border-neutral-800 rounded text-sm font-mono text-neutral-200 focus:outline-none focus:border-neutral-600 focus:ring-1 focus:ring-blue-600/30"
+        />
+      )}
       <CopyButton getText={() => value} />
     </div>
   );
@@ -40,13 +55,77 @@ function Row({ label, value }: { label: string; value: string }) {
 function Component() {
   const [input, setInput] = useState('');
   const [base, setBase] = useState(10);
+  const [customBase, setCustomBase] = useState(16);
+  const [editDrafts, setEditDrafts] = useState<Record<string, string>>({});
+  const lastEdited = useRef<string | null>(null);
 
-  const n = parseAny(input, base);
+  const actualBase = base === -1 ? customBase : base;
+  const n = parseAny(input, actualBase);
   const valid = n !== null;
   const empty = input.trim() === '';
-  // In the render branch below, `valid` guarantees `n` is non-null, but TS
-  // can't narrow across the ternary, so capture a typed non-null view.
   const value = n as bigint;
+
+  const rows = [
+    { label: 'Binary', key: 'binary', rowBase: 2 },
+    { label: 'Octal', key: 'octal', rowBase: 8 },
+    { label: 'Decimal', key: 'decimal', rowBase: 10 },
+    { label: 'Hex', key: 'hex', rowBase: 16 },
+    ...(base === -1
+      ? [{ label: `Base-${customBase}`, key: 'custom' as const, rowBase: customBase }]
+      : []),
+    { label: 'Bytes', key: 'bytes', rowBase: 16, readOnly: true },
+  ];
+
+  function getRowValue(key: string): string {
+    if (lastEdited.current === key && editDrafts[key] !== undefined) {
+      return editDrafts[key];
+    }
+    switch (key) {
+      case 'binary':
+        return value?.toString(2) ?? '';
+      case 'octal':
+        return value?.toString(8) ?? '';
+      case 'decimal':
+        return value?.toString(10) ?? '';
+      case 'hex':
+        return value?.toString(16).toUpperCase() ?? '';
+      case 'custom':
+        return value?.toString(customBase) ?? '';
+      case 'bytes':
+        return value ? hexToBytes(value.toString(16).replace('-', '')) : '';
+      default:
+        return '';
+    }
+  }
+
+  function handleInputChange(newValue: string) {
+    lastEdited.current = 'input';
+    setEditDrafts({});
+    setInput(newValue);
+  }
+
+  function handleBaseChange(newBase: number) {
+    setEditDrafts({});
+    lastEdited.current = 'input';
+    setBase(newBase);
+  }
+
+  function handleCustomBaseChange(raw: string) {
+    const v = parseInt(raw, 10);
+    if (isNaN(v)) return;
+    const clamped = Math.min(36, Math.max(2, v));
+    setCustomBase(clamped);
+  }
+
+  function handleRowChange(key: string, rowBase: number, newValue: string) {
+    lastEdited.current = key;
+    setEditDrafts((prev) => ({ ...prev, [key]: newValue }));
+
+    const parsed = parseAny(newValue, rowBase);
+    if (parsed !== null) {
+      setInput(parsed.toString(actualBase));
+    }
+  }
 
   return (
     <div className="flex flex-col gap-4 h-full overflow-auto">
@@ -54,20 +133,31 @@ function Component() {
         <label className="text-xs uppercase tracking-wide text-neutral-500">Input</label>
         <input
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => handleInputChange(e.target.value)}
           className="flex-1 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded text-sm font-mono text-neutral-200 focus:outline-none focus:border-neutral-600"
-          placeholder="255"
+          placeholder={base === -1 ? `Enter base-${customBase} number` : '255'}
         />
         <select
           value={base}
-          onChange={(e) => setBase(Number(e.target.value))}
+          onChange={(e) => handleBaseChange(Number(e.target.value))}
           className="px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded text-xs text-neutral-300"
         >
           <option value={2}>Binary</option>
           <option value={8}>Octal</option>
           <option value={10}>Decimal</option>
           <option value={16}>Hex</option>
+          <option value={-1}>Custom</option>
         </select>
+        {base === -1 && (
+          <input
+            type="number"
+            min={2}
+            max={36}
+            value={customBase}
+            onChange={(e) => handleCustomBaseChange(e.target.value)}
+            className="w-16 px-2 py-1.5 bg-neutral-900 border border-neutral-800 rounded text-xs font-mono text-neutral-300 text-center focus:outline-none focus:border-neutral-600"
+          />
+        )}
       </div>
 
       <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg px-4 py-2">
@@ -77,22 +167,20 @@ function Component() {
           <div className="text-sm text-neutral-600 py-2">Enter a number to convert</div>
         ) : (
           <>
-            <Row label="Binary" value={value.toString(2)} />
-            <Row label="Octal" value={value.toString(8)} />
-            <Row label="Decimal" value={value.toString(10)} />
-            <Row label="Hex" value={value.toString(16).toUpperCase()} />
-            <Row label="Bytes" value={hexToBytes(value.toString(16).replace('-', ''))} />
+            {rows.map((r) => (
+              <EditableRow
+                key={r.key}
+                label={r.label}
+                value={getRowValue(r.key)}
+                onChange={(r as { readOnly?: boolean }).readOnly ? undefined : (v) => handleRowChange(r.key, r.rowBase, v)}
+                readOnly={(r as { readOnly?: boolean }).readOnly}
+              />
+            ))}
           </>
         )}
       </div>
     </div>
   );
-}
-
-function hexToBytes(hex: string): string {
-  const padded = hex.length % 2 ? '0' + hex : hex;
-  const bytes = padded.match(/.{1,2}/g) ?? [];
-  return bytes.map((b) => b).join(' ');
 }
 
 registerTool({

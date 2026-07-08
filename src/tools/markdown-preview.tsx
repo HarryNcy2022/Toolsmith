@@ -4,6 +4,7 @@ import DOMPurify from 'dompurify';
 import { registerTool } from '../lib/registry';
 import { markdown as mdLang } from '@codemirror/lang-markdown';
 import { CodeEditor } from '../components/CodeEditor';
+import { SplitPane } from '../components/SplitPane';
 
 marked.setOptions({ gfm: true, breaks: false });
 
@@ -20,7 +21,7 @@ function Component() {
   }, [input]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 h-full">
+    <SplitPane orientation="row" id="markdown-preview" className="h-full">
       <div className="flex flex-col min-h-0 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden">
         <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-neutral-400 border-b border-neutral-800">
           Markdown
@@ -41,7 +42,7 @@ function Component() {
           />
         </div>
       </div>
-    </div>
+    </SplitPane>
   );
 }
 

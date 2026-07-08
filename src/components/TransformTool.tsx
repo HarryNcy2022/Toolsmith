@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { usePendingInput } from '../lib/pending-input';
 import { IOPanel, PasteButton, ClearButton } from './IOPanel';
 import { registerTool } from '../lib/registry';
 import type { ToolMeta } from '../types';
+import { SplitPane } from './SplitPane';
 
 export interface TransformOptions {
   inputPlaceholder?: string;
@@ -26,7 +28,23 @@ export function defineTransformTool(
   options: TransformOptions = {}
 ): void {
   function Component() {
-    const [input, setInput] = useState(options.initialInput ?? '');
+    const [input, setInput] = useState(() => {
+      const pending = usePendingInput.getState().consumePendingInput(meta.id);
+      return pending ?? options.initialInput ?? '';
+    });
+
+    // G6: consume pending input even when component stays mounted (same-tool detect)
+    useEffect(() => {
+      const pending = usePendingInput.getState().consumePendingInput(meta.id);
+      if (pending !== null) setInput(pending);
+      const unsub = usePendingInput.subscribe((state, prev) => {
+        if (state.pending[meta.id] !== undefined && state.pending[meta.id] !== prev.pending[meta.id]) {
+          const val = usePendingInput.getState().consumePendingInput(meta.id);
+          if (val !== null) setInput(val);
+        }
+      });
+      return unsub;
+    }, []);
 
     const { output, error } = useMemo(() => {
       if (!input) return { output: '', error: null as string | null };
@@ -40,7 +58,7 @@ export function defineTransformTool(
     return (
       <div className="flex flex-col gap-3 h-full">
         {options.controls && <div className="shrink-0">{options.controls}</div>}
-        <div className="flex gap-3 flex-1 min-h-0">
+        <SplitPane orientation="row" id={meta.id}>
           <IOPanel
             title="Input"
             value={input}
@@ -63,7 +81,7 @@ export function defineTransformTool(
             extensions={options.outputExtensions}
             error={error}
           />
-        </div>
+        </SplitPane>
       </div>
     );
   }

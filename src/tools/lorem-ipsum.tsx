@@ -4,40 +4,120 @@ import { registerTool } from '../lib/registry';
 import { CopyButton } from '../components/CopyButton';
 
 type Unit = 'paragraphs' | 'sentences' | 'words';
+type Type = 'lorem' | 'names' | 'emails' | 'urls' | 'tweets';
+
+const FIRST_NAMES = ['James','Mary','Robert','Patricia','John','Jennifer','Michael','Linda','David','Elizabeth','William','Barbara','Richard','Susan','Joseph','Jessica','Thomas','Sarah','Christopher','Karen','Charles','Lisa','Daniel','Nancy','Matthew','Betty','Anthony','Margaret','Mark','Sandra','Donald','Ashley','Steven','Dorothy','Paul','Kimberly','Andrew','Emily','Joshua','Donna'];
+const LAST_NAMES = ['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Rodriguez','Martinez','Hernandez','Lopez','Gonzalez','Wilson','Anderson','Thomas','Taylor','Moore','Jackson','Martin','Lee','Perez','Thompson','White','Harris','Sanchez','Clark','Ramirez','Lewis','Robinson'];
+const DOMAINS = ['gmail.com','outlook.com','yahoo.com','proton.me','icloud.com','hotmail.com','mail.com','example.org','test.io','dev.net'];
+const URL_PATHS = ['blog','docs','about','contact','products','services','login','dashboard','settings','profile','posts','articles','help','support','status','api','docs/v2','community','events','pricing'];
+const TLDs = ['com','org','net','io','dev','app','co','me'];
+
+function genName(): string {
+  return `${FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)]} ${LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)]}`;
+}
+
+function generateNames(count: number): string {
+  return Array.from({length: count}, () => genName()).join('\n');
+}
+
+function generateEmails(count: number): string {
+  return Array.from({length: count}, () => {
+    const parts = genName().toLowerCase().replace(/\s+/g, '.');
+    return `${parts}${Math.floor(Math.random() * 99)}@${DOMAINS[Math.floor(Math.random() * DOMAINS.length)]}`;
+  }).join('\n');
+}
+
+function generateUrls(count: number): string {
+  return Array.from({length: count}, () => {
+    const path = URL_PATHS[Math.floor(Math.random() * URL_PATHS.length)];
+    const tld = TLDs[Math.floor(Math.random() * TLDs.length)];
+    const words = ['example','sample','test','demo','my','app','web','cloud','data','code'];
+    const word = words[Math.floor(Math.random() * words.length)];
+    return `https://www.${word}${path.slice(0,4)}.${tld}/${path}`;
+  }).join('\n');
+}
+
+function generateTweets(count: number): string {
+  const subjects = ['I','We','The team','Our developer','The API','This feature','The new update','Users'];
+  const verbs = ['just released','launched','fixed','improved','updated','shipped','deployed','announced'];
+  const objects = ['a new version','support for v2','the dashboard','performance','the editor','dark mode','export','import'];
+  const hashtags = ['#dev','#update','#coding','#productivity','#tools','#webdev','#typescript','#release'];
+  return Array.from({length: count}, () => {
+    const s = subjects[Math.floor(Math.random()*subjects.length)];
+    const v = verbs[Math.floor(Math.random()*verbs.length)];
+    const o = objects[Math.floor(Math.random()*objects.length)];
+    const h = hashtags[Math.floor(Math.random()*hashtags.length)];
+    return `${s} ${v} ${o} ${h}`;
+  }).join('\n\n');
+}
 
 function Component() {
+  const [type, setType] = useState<Type>('lorem');
   const [unit, setUnit] = useState<Unit>('paragraphs');
   const [count, setCount] = useState(3);
   const [output, setOutput] = useState('');
 
   function regen() {
-    const text = loremIpsum({
-      count,
-      format: 'plain',
-      units: unit,
-      sentenceLowerBound: 5,
-      sentenceUpperBound: 15,
-      paragraphLowerBound: 3,
-      paragraphUpperBound: 7
-    } as Parameters<typeof loremIpsum>[0]);
-    setOutput(text);
+    switch (type) {
+      case 'names':
+        setOutput(generateNames(count));
+        break;
+      case 'emails':
+        setOutput(generateEmails(count));
+        break;
+      case 'urls':
+        setOutput(generateUrls(count));
+        break;
+      case 'tweets':
+        setOutput(generateTweets(count));
+        break;
+      default: {
+        const text = loremIpsum({
+          count,
+          format: 'plain',
+          units: unit,
+          sentenceLowerBound: 5,
+          sentenceUpperBound: 15,
+          paragraphLowerBound: 3,
+          paragraphUpperBound: 7
+        } as Parameters<typeof loremIpsum>[0]);
+        setOutput(text);
+        break;
+      }
+    }
   }
 
   return (
     <div className="flex flex-col gap-4 h-full overflow-auto">
       <div className="flex flex-wrap items-end gap-3 shrink-0">
         <label className="flex flex-col gap-1 text-xs text-neutral-400">
-          Unit
+          Type
           <select
-            value={unit}
-            onChange={(e) => setUnit(e.target.value as Unit)}
+            value={type}
+            onChange={(e) => setType(e.target.value as Type)}
             className="bg-neutral-900 border border-neutral-800 rounded px-2 py-1.5 text-neutral-200"
           >
-            <option value="paragraphs">Paragraphs</option>
-            <option value="sentences">Sentences</option>
-            <option value="words">Words</option>
+            <option value="lorem">Lorem Ipsum</option>
+            <option value="names">Names</option>
+            <option value="emails">Emails</option>
+            <option value="urls">URLs</option>
+            <option value="tweets">Tweets</option>
           </select>
         </label>
+        {type === 'lorem' && (
+          <label className="flex flex-col gap-1 text-xs text-neutral-400">
+            Unit
+            <select
+              value={unit}
+              onChange={(e) => setUnit(e.target.value as Unit)}
+              className="bg-neutral-900 border border-neutral-800 rounded px-2 py-1.5 text-neutral-200"
+            >
+              <option value="paragraphs">Paragraphs</option>
+              <option value="sentences">Sentences</option>
+              <option value="words">Words</option>
+            </select>
+          </label>
+        )}
         <label className="flex flex-col gap-1 text-xs text-neutral-400">
           Count
           <input
@@ -81,7 +161,7 @@ registerTool({
     id: 'lorem-ipsum',
     name: 'Lorem Ipsum',
     category: 'Generate',
-    keywords: ['lorem', 'ipsum', 'placeholder', 'text', 'dummy']
+    keywords: ['lorem', 'ipsum', 'placeholder', 'text', 'dummy', 'names', 'emails', 'urls', 'tweets']
   },
   component: Component
 });
