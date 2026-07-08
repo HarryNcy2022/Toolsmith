@@ -6,6 +6,10 @@ import { sql } from '@codemirror/lang-sql';
 
 const DIALECTS: SqlLanguage[] = ['sql', 'mysql', 'postgresql', 'sqlite', 'mariadb', 'bigquery', 'tsql'];
 
+// Indent width: 2 or 4 spaces, or 0 = tab.
+type IndentOption = 2 | 4 | 0;
+type CaseOption = 'preserve' | 'upper' | 'lower';
+
 function minifySQL(input: string): string {
   // sql-formatter has no dense mode; strip extra whitespace as a lightweight minify.
   return input
@@ -19,6 +23,9 @@ function Component() {
   const [input, setInput] = useState('');
   const [dialect, setDialect] = useState<SqlLanguage>('sql');
   const [mode, setMode] = useState<'beautify' | 'minify'>('beautify');
+  const [indent, setIndent] = useState<IndentOption>(2);
+  const [keywordCase, setKeywordCase] = useState<CaseOption>('upper');
+  const [identifierCase, setIdentifierCase] = useState<CaseOption>('preserve');
 
   const { output, error } = useMemo(() => {
     if (!input) return { output: '', error: null };
@@ -26,14 +33,16 @@ function Component() {
       if (mode === 'minify') return { output: minifySQL(input), error: null };
       const out = fmtSQL(input, {
         language: dialect,
-        keywordCase: 'upper',
-        tabWidth: 2
+        keywordCase,
+        identifierCase,
+        tabWidth: indent === 0 ? 4 : indent,
+        useTabs: indent === 0
       });
       return { output: out, error: null };
     } catch (e) {
       return { output: '', error: e instanceof Error ? e.message : String(e) };
     }
-  }, [input, dialect, mode]);
+  }, [input, dialect, mode, indent, keywordCase, identifierCase]);
 
   return (
     <div className="flex flex-col gap-3 h-full">
@@ -64,6 +73,42 @@ function Component() {
                 {d}
               </option>
             ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-1.5 text-xs text-neutral-400">
+          Indent
+          <select
+            value={indent}
+            onChange={(e) => setIndent(Number(e.target.value) as IndentOption)}
+            className="bg-neutral-900 border border-neutral-800 rounded px-1.5 py-1 text-neutral-200"
+          >
+            <option value={2}>2 spaces</option>
+            <option value={4}>4 spaces</option>
+            <option value={0}>Tab</option>
+          </select>
+        </label>
+        <label className="flex items-center gap-1.5 text-xs text-neutral-400">
+          Keywords
+          <select
+            value={keywordCase}
+            onChange={(e) => setKeywordCase(e.target.value as CaseOption)}
+            className="bg-neutral-900 border border-neutral-800 rounded px-1.5 py-1 text-neutral-200"
+          >
+            <option value="upper">UPPER</option>
+            <option value="lower">lower</option>
+            <option value="preserve">Preserve</option>
+          </select>
+        </label>
+        <label className="flex items-center gap-1.5 text-xs text-neutral-400">
+          Identifiers
+          <select
+            value={identifierCase}
+            onChange={(e) => setIdentifierCase(e.target.value as CaseOption)}
+            className="bg-neutral-900 border border-neutral-800 rounded px-1.5 py-1 text-neutral-200"
+          >
+            <option value="preserve">Preserve</option>
+            <option value="upper">UPPER</option>
+            <option value="lower">lower</option>
           </select>
         </label>
       </div>

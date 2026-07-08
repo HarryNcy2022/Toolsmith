@@ -37,6 +37,7 @@ async function convert(jsonStr: string, lang: string, topName: string): Promise<
 function Component() {
   const [input, setInput] = useState('');
   const [target, setTarget] = useState<string>('typescript');
+  const [topName, setTopName] = useState('Root');
   const [out, setOut] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -52,7 +53,7 @@ function Component() {
     let cancelled = false;
     setBusy(true);
     setError(null);
-    convert(input, target, 'Root')
+    convert(input, target, topName || 'Root')
       .then((code) => {
         if (!cancelled) {
           setOut(code);
@@ -71,25 +72,37 @@ function Component() {
     return () => {
       cancelled = true;
     };
-  }, [input, target]);
+  }, [input, target, topName]);
 
   return (
     <div className="flex flex-col gap-3 h-full">
-      <label className="flex items-center gap-1.5 text-xs text-neutral-400 shrink-0">
-        Target language
-        <select
-          value={target}
-          onChange={(e) => setTarget(e.target.value)}
-          className="bg-neutral-900 border border-neutral-800 rounded px-1.5 py-1 text-neutral-200"
-        >
-          {TARGETS.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
-        {busy && <span className="text-neutral-600 ml-2">converting…</span>}
-      </label>
+      <div className="flex flex-wrap items-center gap-3 shrink-0">
+        <label className="flex items-center gap-1.5 text-xs text-neutral-400">
+          Target language
+          <select
+            value={target}
+            onChange={(e) => setTarget(e.target.value)}
+            className="bg-neutral-900 border border-neutral-800 rounded px-1.5 py-1 text-neutral-200"
+          >
+            {TARGETS.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-1.5 text-xs text-neutral-400">
+          Base name
+          <input
+            type="text"
+            value={topName}
+            onChange={(e) => setTopName(e.target.value)}
+            placeholder="Root"
+            className="w-32 px-2 py-1 bg-neutral-900 border border-neutral-800 rounded text-neutral-200 font-mono"
+          />
+        </label>
+        {busy && <span className="text-neutral-600 text-xs">converting…</span>}
+      </div>
       <div className="flex gap-3 flex-1 min-h-0">
         <IOPanel
           title="JSON"

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
+import { SwapButton } from '../components/SwapButton';
 import { registerTool } from '../lib/registry';
 
 function Component() {
@@ -69,6 +70,13 @@ function Component() {
           placeholder="https://example.com/?q=hello world"
           actions={
             <>
+              <SwapButton
+                onClick={() => {
+                  setInput(output);
+                  setDir((d) => (d === 'encode' ? 'decode' : 'encode'));
+                }}
+                disabled={!output}
+              />
               <PasteButton onPaste={setInput} />
               <ClearButton onClear={() => setInput('')} disabled={!input} />
             </>

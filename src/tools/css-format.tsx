@@ -1,5 +1,5 @@
 import { css_beautify as beautifyCss } from 'js-beautify';
-import { defineBeautifyTool } from '../components/BeautifyTool';
+import { defineBeautifyTool, type BeautifyCtx } from '../components/BeautifyTool';
 import { css as cssLang } from '@codemirror/lang-css';
 
 // clean-css lazy-loaded — it references Node fs/url for file rebasing which we
@@ -56,7 +56,11 @@ defineBeautifyTool(
     keywords: ['css', 'format', 'beautify', 'minify']
   },
   {
-    beautify: (s) => beautifyCss(s, { indent_size: 2 }),
+    beautify: (s, ctx: BeautifyCtx) =>
+      beautifyCss(s, {
+        indent_size: ctx.indent === 0 ? 1 : ctx.indent,
+        indent_with_tabs: ctx.indent === 0
+      }),
     minify: async (s) => {
       const CleanCSS = await loadMinifier();
       const out = await new CleanCSS({ returnPromise: true, level: 2 }).minify(s);

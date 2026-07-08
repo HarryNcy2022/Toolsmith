@@ -57,13 +57,16 @@ function Component() {
         </button>
       </div>
 
-      <div className="flex-1 min-h-0 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-auto">
+      <div className="flex-1 min-h-0 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-800 bg-neutral-900/80 shrink-0">
+          <span className="text-xs font-medium uppercase tracking-wide text-neutral-400">Output</span>
+          <CopyButton getText={() => output} disabled={!output} />
+        </div>
         {output ? (
-          <div className="p-4 flex items-start gap-3">
-            <pre className="flex-1 text-sm text-neutral-200 whitespace-pre-wrap font-sans leading-relaxed">
+          <div className="flex-1 overflow-auto p-4">
+            <pre className="text-sm text-neutral-200 whitespace-pre-wrap font-sans leading-relaxed">
               {output}
             </pre>
-            <CopyButton getText={() => output} />
           </div>
         ) : (
           <div className="px-4 py-3 text-sm text-neutral-600">Click Generate</div>

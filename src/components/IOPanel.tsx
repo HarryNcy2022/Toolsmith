@@ -99,7 +99,7 @@ export function IOPanel({
           <CopyButton getText={() => value} disabled={readOnly ? !value : false} />
         </div>
       </div>
-      <div className="flex-1 min-h-0 overflow-auto">
+      <div className="flex-1 min-h-0 overflow-auto relative">
         <CodeEditor
           value={value}
           onChange={onChange}
@@ -107,8 +107,15 @@ export function IOPanel({
           placeholder={placeholder}
           extensions={extensions}
         />
+        {readOnly && error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-neutral-950/60 backdrop-blur-sm z-10">
+            <div className="p-3 text-xs font-mono text-red-400 whitespace-pre-wrap break-words max-w-full max-h-full overflow-auto">
+              {error}
+            </div>
+          </div>
+        )}
       </div>
-      {error && (
+      {error && !(readOnly && error) && (
         <div className="px-3 py-1.5 border-t border-neutral-800 bg-red-950/40 text-red-400 text-xs font-mono">
           {error}
         </div>

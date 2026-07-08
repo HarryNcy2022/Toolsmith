@@ -1,5 +1,5 @@
 import { html_beautify as beautifyHtml } from 'js-beautify';
-import { defineBeautifyTool } from '../components/BeautifyTool';
+import { defineBeautifyTool, type BeautifyCtx } from '../components/BeautifyTool';
 import { html as htmlLang } from '@codemirror/lang-html';
 
 // html-minifier-terser is async + pulls terser/acorn; lazy-load it.
@@ -17,7 +17,12 @@ defineBeautifyTool(
     keywords: ['html', 'format', 'beautify', 'minify']
   },
   {
-    beautify: (s) => beautifyHtml(s, { indent_size: 2, wrap_line_length: 0 }),
+    beautify: (s, ctx: BeautifyCtx) =>
+      beautifyHtml(s, {
+        indent_size: ctx.indent === 0 ? 1 : ctx.indent,
+        indent_with_tabs: ctx.indent === 0,
+        wrap_line_length: 0
+      }),
     minify: async (s) => {
       const { minify } = await loadMinifier();
       return minify(s, {

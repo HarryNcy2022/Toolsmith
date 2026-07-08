@@ -1,5 +1,5 @@
 import formatter from 'xml-formatter';
-import { defineBeautifyTool } from '../components/BeautifyTool';
+import { defineBeautifyTool, type BeautifyCtx } from '../components/BeautifyTool';
 import { xml as xmlLang } from '@codemirror/lang-xml';
 
 defineBeautifyTool(
@@ -10,9 +10,9 @@ defineBeautifyTool(
     keywords: ['xml', 'format', 'beautify', 'svg', 'rss']
   },
   {
-    beautify: (s) =>
+    beautify: (s, ctx: BeautifyCtx) =>
       formatter(s, {
-        indentation: '  ',
+        indentation: ctx.indent === 0 ? '\t' : ' '.repeat(ctx.indent),
         collapseContent: true,
         lineSeparator: '\n'
       }),

@@ -1,4 +1,4 @@
-import { defineBeautifyTool } from '../components/BeautifyTool';
+import { defineBeautifyTool, type BeautifyCtx } from '../components/BeautifyTool';
 
 // prettier + terser are sizable; lazy-load both.
 // prettier 3 ships plugins in inconsistent module shapes:
@@ -37,13 +37,15 @@ defineBeautifyTool(
     keywords: ['javascript', 'js', 'format', 'beautify', 'minify', 'prettier']
   },
   {
-    beautify: async (s) => {
+    beautify: async (s, ctx: BeautifyCtx) => {
       const prettier = await loadPrettier();
       return prettier.format(s, {
         parser: 'babel',
         plugins: prettier.__plugins,
         semi: true,
-        singleQuote: true
+        singleQuote: true,
+        tabWidth: ctx.indent === 0 ? 4 : ctx.indent,
+        useTabs: ctx.indent === 0
       });
     },
     minify: async (s) => {

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
+import { SwapButton } from '../components/SwapButton';
 import { registerTool } from '../lib/registry';
 
 // Renderer is a browser context (nodeIntegration:false) → no Node Buffer.
@@ -55,6 +56,13 @@ function Component() {
           placeholder={dir === 'encode' ? 'Hello world' : 'SGVsbG8gd29ybGQ='}
           actions={
             <>
+              <SwapButton
+                onClick={() => {
+                  setInput(output);
+                  setDir((d) => (d === 'encode' ? 'decode' : 'encode'));
+                }}
+                disabled={!output}
+              />
               <PasteButton onPaste={setInput} />
               <ClearButton onClear={() => setInput('')} disabled={!input} />
             </>

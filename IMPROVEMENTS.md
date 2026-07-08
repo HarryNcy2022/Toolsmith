@@ -5,7 +5,7 @@ This is the companion to [`TOOL_PRIORITY.md`](./TOOL_PRIORITY.md), which covers 
 
 Every item below was traced to a real file and line. Where the suggestion is already satisfied, wrong, or needs a new dependency, I say so honestly rather than rubber-stamping it.
 
-> **Status — 2026-07-02:** All **P0** items (rows tagged ✅ below) are implemented and pass `npm run typecheck` + `npm run build`. The P0 sweep killed 3 real bugs (number-base >32-bit hex truncation, UUID→ULID stale-state error, undefined markdown stylesheet) plus quick UX wins; the RegExp tool also gained a VS Code-style Replace→Output panel and the QR Read tab now previews pasted/uploaded images. **Two new P2 entries added** this round: G5 (resizable splitter) and G6 (multi-suggest clipboard). Next focus: the **P1** shared-component work — start with **C1** (`BeautifyTool` indent plumbing), which unlocks adjustable indent across all 5 formatters + SQL.
+> **Status — 2026-07-05:** All **P0** and **P1** items (rows tagged ✅ below) are implemented and pass `npm run typecheck` + `npm run build`. The P0 sweep killed 3 real bugs (number-base >32-bit hex truncation, UUID→ULID stale-state error, undefined markdown stylesheet) plus quick UX wins; the RegExp tool also gained a VS Code-style Replace→Output panel and the QR Read tab now previews pasted/uploaded images. The **P1 sweep** delivered: the central `BeautifyTool` indent-plumbing change (C1) unlocking adjustable indent across all 5 formatters + SQL + JSON↔CSV + YAML↔JSON; a full-red error body in `IOPanel` (S1, benefits every tool); a shared `SwapButton` for base64/URL (C4); JSON sort-keys + auto-repair (J1/J2); JSON↔CSV nested-flatten fixing the `[object Object]` bug (JC1); JWT HS256/384/512 signature verification (W1, no new dep — uses crypto-js); JSON→Code base-class rename (QC1); and several small UX wins. **Two new P2 entries added** earlier this round: G5 (resizable splitter) and G6 (multi-suggest clipboard). Next focus: **P2** features as standalone per-tool PRs.
 
 ---
 
@@ -43,19 +43,19 @@ Sorted by priority, then area.
 | 9 | RegExp | Tooltip for flags `g i m s u y` | S | ✅ **P0 done** | `FLAG_HELP` map + `title=` per button |
 | 10 | RegExp | Replace-pattern → Output panel (VS Code-style `$1` substitution) | S | ✅ **P0 done** | Writable "Replace" input + full-width Output panel; forces `g` so all highlighted matches are replaced; `$1`/`$2`/`$&`/`$<name>`/`$$` all work natively |
 | 11 | QR Code | Read QR from clipboard image (+ image preview) | S | ✅ **P0 done** | `navigator.clipboard.read()` → `loadImage`; added "Paste" button; widened `decodeFile` to `Blob`; **pasted/uploaded/dropped images now preview in the left panel** via object URL (revoked on replace + unmount) |
-| 12 | SQL Format | Indent selector | S/M | **P1** | Add `tabWidth` state; replace hardcoded `2`; `sql-format.tsx:30` |
-| 13 | **Formatters ×5** | **Adjustable indent** (central change) | M | **P1** | Extend `BeautifyTool` with `controls` + thread `ctx.indent`; unlocks HTML/CSS/JS/SCSS/XML |
-| 14 | JSON↔CSV | Adjustable indent (csv→json) | S | **P1** | `indent` state into `JSON.stringify(…,2)`; `json-csv.tsx:19` |
-| 15 | YAML↔JSON | Adjustable indent (both dirs) | S | **P1** | `indent` into `JSON.stringify` + `yaml.dump({indent})`; `yaml-json.tsx:17,20` |
-| 16 | JSON Format | Sort keys in output | S | **P1** | Recursive `sortKeys()` before stringify; `json-formatter.tsx` |
-| 17 | JSON Format | Auto-repair invalid JSON | M | **P1** | Regex repair pass (trailing commas, `True/False/None`); `json-formatter.tsx` |
-| 18 | JSON↔CSV | Nested JSON shows `[object Object]` | S/M | **P1** | Recursive dotted-key flattener before `Papa.unparse`; `json-csv.tsx:17` |
-| 19 | Base64 + URL | Input/output swap button | S | **P1** | Shared `SwapButton` → `setInput(output)`; `base64.tsx`, `url-encode.tsx` |
-| 20 | JWT | Verify HS* signature (incl. missing-sig flag) | M | **P1** | Secret field + crypto-js HMAC-SHA256 compare; `jwt-debugger.tsx` |
-| 21 | Lorem | Move copy button out of text area | S | **P1** | Header bar above `<pre>`; `lorem-ipsum.tsx:62-67` |
-| 22 | JSON→Code | Rename base class | S | **P1** | `topName` state into `convert(…,'Root')`; `json-to-code.tsx:55` |
-| 23 | SQL Format | Full-red error panel | S/M | **P1** | Render error into Output panel body, not footer |
-| 24 | SQL Format | Auto lower/upper case keywords + identifiers | S | **P1** | `keywordCase`/`identifierCase` selects; `sql-format.tsx:29` |
+| 12 | SQL Format | Indent selector | S/M | ✅ **P1 done** | `tabWidth`+`useTabs` state; Indent select; `sql-format.tsx` |
+| 13 | **Formatters ×5** | **Adjustable indent** (central change) | M | ✅ **P1 done** | `BeautifyFns` → `(input, ctx:{indent})`; built-in Indent select in `BeautifyTool`; 5 libs map `ctx.indent` → `indent_size`/`tabWidth`/`indentation` |
+| 14 | JSON↔CSV | Adjustable indent (csv→json) | S | ✅ **P1 done** | `indent` state + select into `JSON.stringify`; `json-csv.tsx` |
+| 15 | YAML↔JSON | Adjustable indent (both dirs) | S | ✅ **P1 done** | `indent` into `JSON.stringify` + `yaml.dump({indent})`; 2/4 spaces (no Tab — YAML forbids); `yaml-json.tsx` |
+| 16 | JSON Format | Sort keys in output | S | ✅ **P1 done** | "Sort keys" checkbox + recursive `sortKeys()`; `json-formatter.tsx` |
+| 17 | JSON Format | Auto-repair invalid JSON | M | ✅ **P1 done** | "Auto-repair" checkbox (off by default) + regex pass (trailing commas, `True/False/None`); `json-formatter.tsx` |
+| 18 | JSON↔CSV | Nested JSON shows `[object Object]` | S/M | ✅ **P1 done** | Recursive dotted-key flattener + "Flatten nested" checkbox (default ON); `json-csv.tsx` |
+| 19 | Base64 + URL | Input/output swap button | S | ✅ **P1 done** | Shared `SwapButton` (⇄) in input actions; flips dir + `setInput(output)`; `base64.tsx`, `url-encode.tsx` |
+| 20 | JWT | Verify HS* signature (incl. missing-sig flag) | M | ✅ **P1 done** | Secret field + crypto-js HMAC-SHA256/384/512 over raw segments; ✅/❌/unsigned badges; RS*/ES* flagged "not supported" (deferred W2); `jwt-debugger.tsx` |
+| 21 | Lorem | Move copy button out of text area | S | ✅ **P1 done** | CopyButton moved to an "Output" header bar above the `<pre>`; `lorem-ipsum.tsx` |
+| 22 | JSON→Code | Rename base class | S | ✅ **P1 done** | `topName` state (default `Root`) + text input; threaded into `convert` + effect deps; `json-to-code.tsx` |
+| 23 | SQL Format | Full-red error panel | S/M | ✅ **P1 done** | `IOPanel` renders red error body when `readOnly && error` (benefits every output panel); `IOPanel.tsx` |
+| 24 | SQL Format | Auto lower/upper case keywords + identifiers | S | ✅ **P1 done** | `keywordCase` (UPPER/lower/Preserve) + `identifierCase` (Preserve/UPPER/lower) selects; `sql-format.tsx` |
 | 25 | JSON→Code | Per-language options (Swift init/coding-keys) | M | **P2** | Extend `rendererOptions`; **confirmed supported** by quicktype Swift renderer |
 | 26 | Base64 Image | Output modes (raw/data-url/css) | S/M | **P2** | `mode` state transforming `dataUrl`; `base64-image.tsx` |
 | 27 | Color | RGBA / HSLA / HWB / CMYK outputs | M | **P2** | RGBA/HSLA via tinycolor; HWB/CMYK hand-rolled (~11 lines) |
@@ -441,8 +441,8 @@ Custom, **already tabbed** (`generate` / `read`). Generate uses `qrcode`; Read u
 
 These four shared-component edits each unblock several items above. Doing them first makes the rest cheap.
 
-### C1 — `BeautifyTool` options plumbing  (unlocks **F1**, helps **S2**)
-Add `controls?: React.ReactNode` and change `BeautifyFns` to `(input, ctx: { indent: number }) => …`, with `indent` added to the effect dependency array. Every format lib already accepts an indent param. See **F1** for the per-lib mapping.
+### C1 — `BeautifyTool` options plumbing  ✅ **done** (unlocked **F1**, helped **S2**)
+Added `controls?: React.ReactNode` to `BeautifyOptions`, introduced `BeautifyCtx = { indent: IndentOption }` (2|4|0, 0=tab), changed `BeautifyFns` to `(input, ctx: BeautifyCtx) => …`, and added `indent` to the effect deps. The indent `<select>` is built into `BeautifyTool` so all 5 formatters inherit it with zero JSX changes; each lib maps `ctx.indent` to its own knob. See **F1** for the per-lib mapping.
 
 ### C2 — `<IOGroup orientation>` wrapper  (unlocks **G1**)
 Introduce a layout wrapper with an `orientation: 'row'|'col'` prop; have `TransformTool`, `BeautifyTool`, and the ~20 inline-layout tools use it. Drive orientation from a persisted global store so it's one app-wide toggle. See **G1**.
@@ -450,8 +450,8 @@ Introduce a layout wrapper with an `orientation: 'row'|'col'` prop; have `Transf
 ### C3 — Per-tool state store  (unlocks **G2**)
 A Zustand store keyed by `toolId` holding `{ input, options }`; helpers hydrate on mount and persist on change. Decide a policy for on-demand-generate tools (uuid/random/lorem): regenerate vs. restore last output. See **G2**.
 
-### C4 — Shared `SwapButton`  (unlocks **B1**, **U1**, future bidirectional tools)
-One component that calls `setInput(output)` and optionally flips `dir`. Drop into the Input panel `actions` slot of base64, url-encode, and any future bidirectional tool.
+### C4 — Shared `SwapButton`  ✅ **done** (unlocked **B1**, **U1**, future bidirectional tools)
+`src/components/SwapButton.tsx` — presentational ⇄ button matching `PasteButton`/`ClearButton` styling. Calls `setInput(output)` and flips `dir` (encode↔decode), enabling the useful round-trip (encode → swap → decode). Dropped into the Input panel `actions` slot of base64 + url-encode; future bidirectional tools reuse it.
 
 ### C5 — `<SplitPane>` wrapper + `react-resizable-panels`  (unlocks **G5**, helps **G3**)
 A thin shared component over `react-resizable-panels` with an `orientation` prop and persisted sizes (`autoSaveId`). Introduces the one dep that both the resizable splitter (G5) and the resizable sidebar (G3) need. Apply to markdown first, then the two shared layout components (`TransformTool`, `BeautifyTool`) to unlock the majority of tools in two edits.
@@ -494,6 +494,6 @@ A Zustand store keyed by `toolId` holding a one-shot `pendingInput` value. The D
 If implementing, work top-down by priority — the P0 sweep alone noticeably improves perceived quality (kills 3 real bugs + the most-visible UI breakage):
 
 1. ~~**P0 sweep (one PR):** UU1, NB1+NB2, MD1+MD2, HJ1, C-color-2, UT1, RT1+RT2, QR1.~~ **✅ DONE (2026-07-02)** — see status banner at top.
-2. **P1 shared-component work (next PR):** C1 (`BeautifyTool` indent plumbing) → then F1 across all 5 formatters + S2 + JC2 + Y1. Then C4 (`SwapButton`) → B1/U1. Then J1/J2, JC1, W1, QC1, LI1, S1/S3.
+2. ~~**P1 shared-component work:** C1 (`BeautifyTool` indent plumbing) → F1 across all 5 formatters + S2 + JC2 + Y1. Then C4 (`SwapButton`) → B1/U1. Then J1/J2, JC1, W1, QC1, LI1, S1/S3.~~ **✅ DONE (2026-07-05)** — see status banner at top.
 3. **P2 features** as standalone PRs per tool (QC2, BI1, color extras, UT2, SC1, HJ2, RS1, LI2, NB3/NB4).
 4. **P3 architectural** items last, each with its own design doc (G1, G2, G3, H1, W2, G4).

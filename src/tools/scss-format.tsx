@@ -1,5 +1,5 @@
 import { css_beautify as beautifyCss } from 'js-beautify';
-import { defineBeautifyTool } from '../components/BeautifyTool';
+import { defineBeautifyTool, type BeautifyCtx } from '../components/BeautifyTool';
 import { css as cssLang } from '@codemirror/lang-css';
 
 // sass ships ~8MB with native bindings. Lazy-load so it lands in its own chunk
@@ -21,10 +21,13 @@ defineBeautifyTool(
   {
     // SCSS: compile to CSS then beautify the output. (Beautifying raw SCSS syntax
     // directly is unreliable, so we compile first.)
-    beautify: async (s) => {
+    beautify: async (s, ctx: BeautifyCtx) => {
       const sass = await loadSass();
       const compiled = sass.compileString(s).css;
-      return beautifyCss(compiled, { indent_size: 2 });
+      return beautifyCss(compiled, {
+        indent_size: ctx.indent === 0 ? 1 : ctx.indent,
+        indent_with_tabs: ctx.indent === 0
+      });
     },
     minify: async (s) => {
       const sass = await loadSass();

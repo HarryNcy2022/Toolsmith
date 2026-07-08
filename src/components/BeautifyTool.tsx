@@ -11,10 +11,20 @@ export interface BeautifyOptions {
   noMinify?: boolean;
 }
 
+/** Indent width: 2 or 4 spaces, or 0 = tab. (Mirrors json-formatter's convention.) */
+export type IndentOption = 2 | 4 | 0;
+
+/** Threaded into every beautify/minify fn so each lib can map it to its own knob. */
+export interface BeautifyCtx {
+  indent: IndentOption;
+}
+
 export type BeautifyFns = {
-  // fns may be sync or return a Promise (e.g. html-minifier-terser is async)
-  beautify: (input: string) => string | Promise<string>;
-  minify?: (input: string) => string | Promise<string>;
+  // fns may be sync or return a Promise (e.g. html-minifier-terser is async).
+  // `ctx` carries the indent selection; minify fns accept it for a uniform call
+  // site but typically ignore it (minified output has no indentation).
+  beautify: (input: string, ctx: BeautifyCtx) => string | Promise<string>;
+  minify?: (input: string, ctx: BeautifyCtx) => string | Promise<string>;
 };
 
 /**
@@ -30,6 +40,7 @@ export function defineBeautifyTool(
   function Component() {
     const [input, setInput] = useState('');
     const [mode, setMode] = useState<'beautify' | 'minify'>('beautify');
+    const [indent, setIndent] = useState<IndentOption>(2);
     const [output, setOutput] = useState('');
     const [error, setError] = useState<string | null>(null);
 
@@ -40,14 +51,15 @@ export function defineBeautifyTool(
         return;
       }
       let cancelled = false;
+      const ctx: BeautifyCtx = { indent };
       const fn = mode === 'minify' ? fns.minify : fns.beautify;
       if (mode === 'minify' && !fn) {
         setOutput(input);
         return;
       }
-      const run = fn as (s: string) => string | Promise<string>;
+      const run = fn as (s: string, c: BeautifyCtx) => string | Promise<string>;
       try {
-        const result = run(input);
+        const result = run(input, ctx);
         if (typeof result === 'string') {
           if (!cancelled) {
             setOutput(result);
@@ -77,25 +89,39 @@ export function defineBeautifyTool(
       return () => {
         cancelled = true;
       };
-    }, [input, mode]);
+    }, [input, mode, indent]);
 
     return (
       <div className="flex flex-col gap-3 h-full">
-        <div className="inline-flex rounded border border-neutral-800 overflow-hidden self-start shrink-0">
-          <button
-            onClick={() => setMode('beautify')}
-            className={`px-3 py-1 text-xs ${mode === 'beautify' ? 'bg-blue-600 text-white' : 'bg-neutral-900 text-neutral-400 hover:text-neutral-200'}`}
-          >
-            Beautify
-          </button>
-          {!options.noMinify && fns.minify && (
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div className="inline-flex rounded border border-neutral-800 overflow-hidden">
             <button
-              onClick={() => setMode('minify')}
-              className={`px-3 py-1 text-xs ${mode === 'minify' ? 'bg-blue-600 text-white' : 'bg-neutral-900 text-neutral-400 hover:text-neutral-200'}`}
+              onClick={() => setMode('beautify')}
+              className={`px-3 py-1 text-xs ${mode === 'beautify' ? 'bg-blue-600 text-white' : 'bg-neutral-900 text-neutral-400 hover:text-neutral-200'}`}
             >
-              Minify
+              Beautify
             </button>
-          )}
+            {!options.noMinify && fns.minify && (
+              <button
+                onClick={() => setMode('minify')}
+                className={`px-3 py-1 text-xs ${mode === 'minify' ? 'bg-blue-600 text-white' : 'bg-neutral-900 text-neutral-400 hover:text-neutral-200'}`}
+              >
+                Minify
+              </button>
+            )}
+          </div>
+          <label className="flex items-center gap-1.5 text-xs text-neutral-400">
+            Indent
+            <select
+              value={indent}
+              onChange={(e) => setIndent(Number(e.target.value) as IndentOption)}
+              className="bg-neutral-900 border border-neutral-800 rounded px-1.5 py-1 text-neutral-200"
+            >
+              <option value={2}>2 spaces</option>
+              <option value={4}>4 spaces</option>
+              <option value={0}>Tab</option>
+            </select>
+          </label>
         </div>
         <div className="flex gap-3 flex-1 min-h-0">
           <IOPanel
