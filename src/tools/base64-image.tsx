@@ -29,6 +29,23 @@ function Component() {
     }
   }
 
+  async function pasteFromClipboard() {
+    try {
+      const items = await navigator.clipboard.read();
+      const imageItem = items.find(item => item.types.some(t => t.startsWith('image/')));
+      if (!imageItem) {
+        setError('No image found on clipboard');
+        return;
+      }
+      const imageType = imageItem.types.find(t => t.startsWith('image/'))!;
+      const blob = await imageItem.getType(imageType);
+      const file = new File([blob], 'clipboard-image', { type: blob.type });
+      await handleFile(file);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
   async function handleFile(file: File) {
     setError(null);
     if (!file.type.startsWith('image/')) {
@@ -64,21 +81,12 @@ function Component() {
           <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-neutral-400 border-b border-neutral-800 flex items-center justify-between">
             <span>Image / Data URL</span>
             <div className="flex gap-1.5 items-center">
-              <div className="flex gap-0.5">
-                {(['preview', 'raw', 'data-url', 'css'] as const).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setMode(m)}
-                    className={`px-1.5 py-1 text-[11px] rounded ${
-                      mode === m
-                        ? 'bg-blue-600 text-white'
-                        : 'border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200'
-                    }`}
-                  >
-                    {m === 'data-url' ? 'Data URL' : m.charAt(0).toUpperCase() + m.slice(1)}
-                  </button>
-                ))}
-              </div>
+              <button
+                onClick={() => void pasteFromClipboard()}
+                className="px-2.5 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200"
+              >
+                Paste
+              </button>
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className="px-2.5 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200"
@@ -135,7 +143,24 @@ function Component() {
         <div className="flex flex-col min-h-0 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden">
           <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-neutral-400 border-b border-neutral-800 flex items-center justify-between">
             <span>{mode === 'preview' ? 'Preview' : mode === 'data-url' ? 'Data URL' : mode.charAt(0).toUpperCase() + mode.slice(1)}</span>
-            {mode !== 'preview' && <CopyButton getText={() => getFormattedOutput()} disabled={!dataUrl} />}
+            <div className="flex gap-1.5 items-center">
+              <div className="flex gap-0.5">
+                {(['preview', 'raw', 'data-url', 'css'] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setMode(m)}
+                    className={`px-1.5 py-1 text-[11px] rounded ${
+                      mode === m
+                        ? 'bg-blue-600 text-white'
+                        : 'border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200'
+                    }`}
+                  >
+                    {m === 'data-url' ? 'Data URL' : m.charAt(0).toUpperCase() + m.slice(1)}
+                  </button>
+                ))}
+              </div>
+              {mode !== 'preview' && <CopyButton getText={() => getFormattedOutput()} disabled={!dataUrl} />}
+            </div>
           </div>
           {mode === 'preview' ? (
             <div className="flex-1 min-h-0 overflow-auto flex items-center justify-center p-4 bg-[repeating-conic-gradient(#262626_0%_25%,#1a1a1a_0%_50%)] bg-[length:20px_20px]">
