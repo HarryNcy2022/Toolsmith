@@ -12,7 +12,7 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
   const [query, setQuery] = useState('');
   const [idx, setIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const tools = getTools();
+  const tools = useMemo(() => getTools(), []);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return tools;
@@ -40,37 +40,29 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
     }
   }, [open]);
 
-  // global key handlers
-  useEffect(() => {
-    if (!open) return;
-
-    function onKey(e: KeyboardEvent) {
-      switch (e.key) {
-        case 'ArrowDown':
-          e.preventDefault();
-          setIdx((i) => Math.min(i + 1, filtered.length - 1));
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          setIdx((i) => Math.max(i - 1, 0));
-          break;
-        case 'Enter':
-          e.preventDefault();
-          if (filtered[idx]) {
-            onSelect(filtered[idx].id);
-            onClose();
-          }
-          break;
-        case 'Escape':
-          e.preventDefault();
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setIdx((i) => Math.min(i + 1, filtered.length - 1));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setIdx((i) => Math.max(i - 1, 0));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (filtered[idx]) {
+          onSelect(filtered[idx].id);
           onClose();
-          break;
-      }
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        onClose();
+        break;
     }
-
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [open, filtered, idx, onClose, onSelect]);
+  };
 
   if (!open) return null;
 
@@ -88,6 +80,7 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={onKeyDown}
             placeholder="Search tools… (⌘K)"
             className="flex-1 py-3 bg-transparent text-sm text-neutral-200 placeholder-neutral-500 focus:outline-none"
           />
