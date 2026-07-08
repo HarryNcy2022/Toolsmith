@@ -81,6 +81,7 @@ Sorted by priority, then area.
 | 46 | Random String | RS1 — Advanced per-class character counts | M | **P2** | "Advanced" toggle reveals per-class count inputs |
 | 47 | Lorem | LI2 — Extra types (names/email/url/tweets) | M | **P2** | Needs wordlists or `@faker-js/faker`; `lorem-ipsum` lib can't do it |
 | 48 | Base64 Image | BI1 — Output modes (raw/data-url/css) | S/M | **P2** | `mode` state transforming `dataUrl`; `base64-image.tsx` |
+| **49** | **Base64 Image** | **BI3 — Relocate mode buttons to right panel** | **S** | **P1** | Move Preview/Raw/Data URL/CSS buttons from crowded left header to right panel action bar |
 
 ---
 
@@ -404,6 +405,13 @@ Custom, textarea + preview. `handleFile` reads → data URL; `decodeToImage` acc
 - **Current state:** `base64-image.tsx:82-99` has an "Upload" button + file input and drag-drop support (`onDragOver`/`onDrop`). But there is **no paste-from-clipboard** for actual image binary data. The QR Code Read tab (QR1, ✅ done) already has this via `navigator.clipboard.read()` → `image/*` ClipboardItem → Blob → `loadImage` — the exact pattern to replicate here.
 - **Plan:** add a "Paste" button alongside "Upload" that calls `navigator.clipboard.read()` (not `readText()`), finds an `image/*` item, reads it as Blob, and feeds `fileToDataUrl()` (already exists at `base64-image.tsx:5-11`). Reuse the same `handleFile()` path since `File` extends `Blob`. The `navigator.clipboard.read()` call for images requires a focused document — same constraint as QR1, acceptable for a desktop Electron app.
 - **My take:** `agree` — high user value, small change, proven pattern from QR1.
+
+---
+
+### Base64 Image — Relocate mode buttons to right panel (BI3)
+- **Current state:** The Preview/Raw/Data URL/CSS mode selector buttons are in the left panel header alongside Paste, Upload, and Copy — a crowded header bar.
+- **Fix:** Move the mode button group from the left panel header to the right panel header, placing them before the Copy button in the right panel's action bar.
+- **Effort:** S · **Priority:** P1
 
 ---
 
