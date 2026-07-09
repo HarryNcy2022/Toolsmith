@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { registerTool } from '../lib/registry';
 import { html as htmlLang } from '@codemirror/lang-html';
+import { SplitPane } from '../components/SplitPane';
 import { CodeEditor } from '../components/CodeEditor';
 
 function Component() {
@@ -9,7 +10,7 @@ function Component() {
   );
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 h-full">
+    <SplitPane orientation="row" id="html-preview" className="h-full">
       <div className="flex flex-col min-h-0 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden">
         <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-neutral-400 border-b border-neutral-800">
           HTML
@@ -37,7 +38,7 @@ function Component() {
           />
         </div>
       </div>
-    </div>
+    </SplitPane>
   );
 }
 

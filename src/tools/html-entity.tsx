@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import he from 'he';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
+import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 import { html as htmlLang } from '@codemirror/lang-html';
 
@@ -36,7 +37,7 @@ function Component() {
           Decode
         </button>
       </div>
-      <div className="flex gap-3 flex-1 min-h-0">
+      <SplitPane orientation="row" id="html-entity">
         <IOPanel
           title="Input"
           value={input}
@@ -51,7 +52,7 @@ function Component() {
           }
         />
         <IOPanel title="Output" value={output} readOnly error={error} />
-      </div>
+      </SplitPane>
     </div>
   );
 }

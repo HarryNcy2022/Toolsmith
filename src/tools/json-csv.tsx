@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import Papa from 'papaparse';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
+import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 import { json } from '@codemirror/lang-json';
 
@@ -113,7 +114,7 @@ function Component() {
           </label>
         )}
       </div>
-      <div className="flex gap-3 flex-1 min-h-0">
+      <SplitPane orientation="row" id="json-csv">
         <IOPanel
           title={dir === 'json2csv' ? 'JSON' : 'CSV'}
           value={input}
@@ -134,7 +135,7 @@ function Component() {
           extensions={dir === 'json2csv' ? undefined : [json()]}
           error={error}
         />
-      </div>
+      </SplitPane>
     </div>
   );
 }

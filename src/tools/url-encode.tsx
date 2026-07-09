@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { SwapButton } from '../components/SwapButton';
+import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 
 function Component() {
@@ -62,7 +63,7 @@ function Component() {
           </button>
         </div>
       </div>
-      <div className="flex gap-3 flex-1 min-h-0">
+      <SplitPane orientation="row" id="url-encode">
         <IOPanel
           title="Input"
           value={input}
@@ -83,7 +84,7 @@ function Component() {
           }
         />
         <IOPanel title="Output" value={output} readOnly error={error} />
-      </div>
+      </SplitPane>
     </div>
   );
 }

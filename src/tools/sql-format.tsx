@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { format as fmtSQL, type SqlLanguage } from 'sql-formatter';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
+import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 import { sql } from '@codemirror/lang-sql';
 
@@ -112,7 +113,7 @@ function Component() {
           </select>
         </label>
       </div>
-      <div className="flex gap-3 flex-1 min-h-0">
+      <SplitPane orientation="row" id="sql-format">
         <IOPanel
           title="Input"
           value={input}
@@ -127,7 +128,7 @@ function Component() {
           }
         />
         <IOPanel title="Output" value={output} readOnly extensions={[sql()]} error={error} />
-      </div>
+      </SplitPane>
     </div>
   );
 }

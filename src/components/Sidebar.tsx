@@ -34,7 +34,7 @@ export function Sidebar({ activeId, onSelect }: SidebarProps) {
   }, [query]);
 
   return (
-    <aside className="flex flex-col w-60 shrink-0 bg-neutral-950 border-r border-neutral-800">
+    <aside className="flex flex-col bg-neutral-950 border-r border-neutral-800 h-full min-w-[180px]">
       <div className="p-3 border-b border-neutral-800">
         <div className="text-sm font-semibold text-neutral-100 mb-2">DevUtils</div>
         <input

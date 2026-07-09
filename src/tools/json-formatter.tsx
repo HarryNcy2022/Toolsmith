@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
+import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 import { json } from '@codemirror/lang-json';
 
@@ -146,7 +147,7 @@ function Component() {
           Auto-repair
         </label>
       </div>
-      <div className="flex gap-3 flex-1 min-h-0">
+      <SplitPane orientation="row" id="json-formatter">
         <IOPanel
           title="Input"
           value={input}
@@ -168,7 +169,7 @@ function Component() {
           extensions={[json()]}
           error={error}
         />
-      </div>
+      </SplitPane>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import HmacSHA256 from 'crypto-js/hmac-sha256';
 import HmacSHA384 from 'crypto-js/hmac-sha384';
 import HmacSHA512 from 'crypto-js/hmac-sha512';
 import { enc } from 'crypto-js';
+import { SplitPane } from '../components/SplitPane';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { registerTool } from '../lib/registry';
 import { json } from '@codemirror/lang-json';
@@ -153,10 +154,10 @@ function Component() {
               )}
             </div>
           )}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-0">
+          <SplitPane orientation="row" id="jwt-debugger">
             <IOPanel title="Header" value={d.header} readOnly extensions={[json()]} />
             <IOPanel title="Payload" value={d.payload} readOnly extensions={[json()]} />
-          </div>
+          </SplitPane>
           <div className="shrink-0 flex flex-col gap-2 text-xs px-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-neutral-500">Signature:</span>

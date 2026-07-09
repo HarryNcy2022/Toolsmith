@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
+import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 
 // Renderer is a browser context — no Buffer. Use TextEncoder/TextDecoder.
@@ -52,7 +53,7 @@ function Component() {
           Hex → Text
         </button>
       </div>
-      <div className="flex gap-3 flex-1 min-h-0">
+      <SplitPane orientation="row" id="hex-ascii">
         <IOPanel
           title={dir === 'text2hex' ? 'Text' : 'Hex'}
           value={input}
@@ -71,7 +72,7 @@ function Component() {
           readOnly
           error={error}
         />
-      </div>
+      </SplitPane>
     </div>
   );
 }

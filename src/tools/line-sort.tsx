@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
+import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 
 type SortBy = 'az' | 'za' | 'length-asc' | 'length-desc' | 'natural' | 'numeric';
@@ -74,7 +75,7 @@ function Component() {
           </label>
         ))}
       </div>
-      <div className="flex gap-3 flex-1 min-h-0">
+      <SplitPane orientation="row" id="line-sort">
         <IOPanel
           title={`Input (${inCount} lines)`}
           value={input}
@@ -88,7 +89,7 @@ function Component() {
           }
         />
         <IOPanel title={`Output (${outCount} lines)`} value={output} readOnly />
-      </div>
+      </SplitPane>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import cronParser from 'cron-parser';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
+import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 import { CopyButton } from '../components/CopyButton';
 
@@ -69,7 +70,7 @@ function Component() {
           </button>
         ))}
       </div>
-      <div className="flex gap-3 flex-1 min-h-0">
+      <SplitPane orientation="row" id="cron-parser">
         <IOPanel
           title="Cron expression"
           value={input}
@@ -126,7 +127,7 @@ function Component() {
             )}
           </div>
         </div>
-      </div>
+      </SplitPane>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import jsQR from 'jsqr';
 import { registerTool } from '../lib/registry';
+import { SplitPane } from '../components/SplitPane';
 import { CopyButton } from '../components/CopyButton';
 
 const ECC_LEVELS: { id: 'L' | 'M' | 'Q' | 'H'; label: string }[] = [
@@ -76,7 +77,7 @@ function Generate() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-0">
+    <SplitPane orientation="row" id="qr-code-generate">
       <div className="flex flex-col gap-3 bg-neutral-900/50 border border-neutral-800 rounded-lg p-3">
         <label className="flex flex-col gap-1 text-xs text-neutral-400">
           Text / URL
@@ -140,7 +141,7 @@ function Generate() {
           )}
         </div>
       </div>
-    </div>
+    </SplitPane>
   );
 }
 
@@ -211,7 +212,7 @@ function Read() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-0">
+    <SplitPane orientation="row" id="qr-code-read">
       <div className="flex flex-col min-h-0 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden">
         <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-neutral-400 border-b border-neutral-800 flex items-center justify-between">
           <span>Image</span>
@@ -280,7 +281,7 @@ function Read() {
           )}
         </div>
       </div>
-    </div>
+    </SplitPane>
   );
 }
 

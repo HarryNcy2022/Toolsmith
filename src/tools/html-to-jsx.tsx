@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { registerTool } from '../lib/registry';
+import { SplitPane } from '../components/SplitPane';
 import { html as htmlLang } from '@codemirror/lang-html';
 import { javascript as jsLang } from '@codemirror/lang-javascript';
 
@@ -273,7 +274,7 @@ function Component() {
           JSX → HTML
         </button>
       </div>
-      <div className="flex gap-3 flex-1 min-h-0">
+      <SplitPane orientation="row" id="html-to-jsx">
         <IOPanel
           title={inputTitle}
           value={input}
@@ -295,7 +296,7 @@ function Component() {
           extensions={[outputLang()]}
           error={error}
         />
-      </div>
+      </SplitPane>
     </div>
   );
 }

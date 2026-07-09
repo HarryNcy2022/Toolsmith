@@ -5,7 +5,7 @@ This is the companion to [`TOOL_PRIORITY.md`](./TOOL_PRIORITY.md), which covers 
 
 Every item below was traced to a real file and line. Where the suggestion is already satisfied, wrong, or needs a new dependency, I say so honestly rather than rubber-stamping it.
 
-> **Status — 2026-07-09:** All **P0** and **P1** items are implemented. The **P2** sweep delivered: G5 (resizable splitter via `react-resizable-panels` + `SplitPane`), G6 (multi-suggest clipboard with ranking + `pendingInput` handoff), QC2 (Swift per-language options JSON→Code), BI1 (output modes), color extras (RGBA/HSLA/HWB/CMYK), UT2 (ISO/RFC input), SC1 (line-by-line mode), HJ2 (JSX→HTML reverse), NB3/NB4 (enter-any-field + custom base), RS1 (advanced per-class char counts), LI2 (more generate types — names/email/url/tweets via faker). **Round 2 of P0/P1 items implemented:** G7 (command palette arrow key bug — root cause: `getTools()` unstable reference), G5 (splitter hairline `w-px` + wider `mx-3` grab margin), BI2 (paste image from clipboard), UT3 (mode-aware "Now" button; removed format samples for cleaner display), BI3 (relocate mode buttons from left to right panel). Next focus: **bug fixes + high-value UX tweaks** in priority order below.
+> **Status — 2026-07-09:** All **P0**, **P1**, and **P2** items are implemented. The P2 sweep delivered: G5 (resizable splitter), G6 (multi-suggest clipboard + `pendingInput`), QC2 (Swift options), BI1 (output modes), C-color-1 (RGBA/HSLA/HWB/CMYK), UT2 (ISO/RFC), SC1 (line-by-line), HJ2 (JSX→HTML), NB3/NB4 (enter-any-field + custom base), RS1 (per-class counts), LI2 (more types). **Final P2 batch (2026-07-09):** G3 (resizable sidebar with thin separator + collapse), G6 (clipboard detect integrated into ⌘K), SC2 (multi-line textarea + card grid), G5 step 4 (21 tools migrated to `<SplitPane>`). All P2 items are now complete.
 
 ---
 
@@ -61,27 +61,27 @@ Sorted by priority, then area.
 | 26 | Global/UX | G5 — SplitPane: thin separator + wider grab area | S | ✅ **P1 done** | Separator `w-1.5`→`w-px` (1px hairline), margin `mx-1`→`mx-3` (12px), grip dot proportionally smaller |
 | 27 | Base64 Image | BI2 — Paste image from clipboard | S | ✅ **P1 done** | `navigator.clipboard.read()` → image Blob → `handleFile()`; "Paste" button in left header |
 | 28 | Unix Time | UT3 — Mode-aware "Now" button; removed format samples | S | ✅ **P1 done** | "Now" formats per inputMode (epoch/ISO/RFC); removed crowded `e.g.` sample lines |
-| 29 | **Global/UX** | G5 — Resizable splitter: migrate remaining ~13 inline tools + 8 grid tools to `&lt;SplitPane&gt;` | M | **P2** | Per-tool migration: swap hardcoded `grid`/`flex` for `&lt;SplitPane orientation="row"&gt;` |
-| **30** | **Global** | **G3 — Resizable sidebar with thin splitter** | **M** | **P2** | `&lt;PanelGroup&gt;` + `&lt;PanelResizeHandle&gt;` in `App.tsx`; thinner handle `w-px` → hover `w-1`; collapse button; persisted width |
-| **31** | **Global/UX** | **G6 — Clipboard detect redesigned: integrated into Ctrl+K** | **M** | **P2** | Remove header Detect button; on palette open + empty query, read clipboard and show "Detect as &lt;type&gt;" as first row |
-| **32** | **String Case** | **SC2 — Multi-line input (&lt;textarea&gt;) + display layout redesign** | **M** | **P2** | Replace `&lt;input&gt;` with `&lt;textarea&gt;`; redesign results from flat list to card grid/accordion for multi-line outputs |
+| 29 | **Global/UX** | G5 — Resizable splitter: migrate remaining ~13 inline tools + 8 grid tools to `&lt;SplitPane&gt;` | M | ✅ **P2 done** | Swapped hardcoded `grid`/`flex` for `<SplitPane>` in 21 tool files |
+| **30** | **Global** | **G3 — Resizable sidebar with thin splitter** | **M** | ✅ **P2 done** | `<Group>` + `<Separator>` in `App.tsx`; thin `w-px` handle; collapse via `collapsible` Panel; persisted width via `useDefaultLayout` |
+| **31** | **Global/UX** | **G6 — Clipboard detect redesigned: integrated into Ctrl+K** | **M** | ✅ **P2 done** | Removed header Detect button + popover; ⌘K reads clipboard on open, shows "Detect as" row when query empty |
+| **32** | **String Case** | **SC2 — Multi-line input (&lt;textarea&gt;) + display layout redesign** | **M** | ✅ **P2 done** | Replaced `<input>` with `<textarea>`; results now render as card grid `grid-cols-2 lg:grid-cols-3` |
 | 33 | JSON→Code | QC2 — Per-language options (Swift init/coding-keys) | M | **P3** | Currently Swift-only with working UI; extend only if users request other languages |
 | 34 | **Global** | G2 — Preserve contents when switching tabs | L | **P3** | Per-tool Zustand store or `&lt;KeepAlive&gt;` mounting; design first |
 | 35 | **Global** | G1 — Panel orientation toggle (L/R vs U/D) | M/L | **P3** | `orientation` prop across `IOPanel`/`TransformTool`/`BeautifyTool` + ~20 tools |
 | 36 | **Global** | G4 — GitHub hosting + CI release + signing | L | **P3** | `repository`/`publish` config, GH Actions, codesign; macOS target configured |
 | 37 | JWT | W2 — RS*/ES* verification + alg selector | M/L | **P3** | **Needs dep**: `jose` for asymmetric algorithms |
 | 38 | Hash | H1 — MD2 / MD4 outputs | M | **P3** | **Needs dep**: crypto-js 4.x dropped both; add `js-md4` + vendor MD2 |
-| 39 | Color | C-color-4 — Enter-any-field bidirectional | M/L | **P2** | Each `Row` editable; `lastEdited` ref prevents loops |
-| 40 | Number Base | NB3 — Enter-any-field bidirectional | M/L | **P2** | Each base row editable; same loop-avoidance pattern |
-| 41 | Number Base | NB4 — Selectable/custom base (2–36) | S/M | **P2** | "Custom" option + radix input; generalize `parseAny` |
-| 42 | Color | C-color-1 — RGBA / HSLA / HWB / CMYK outputs | M | **P2** | RGBA/HSLA via tinycolor; HWB/CMYK hand-rolled |
-| 43 | Unix Time | UT2 — Convert from other formats (ISO/RFC) | M | **P2** | Detect non-numeric → `dayjs(str).valueOf()`; customParseFormat |
-| 44 | String Case | SC1 — Multi-row (line-by-line) mode | S/M | **P2** | Toggle: `input.split('\n').map(fn).join('\n')`; `string-case.tsx` |
-| 45 | HTML↔JSX | HJ2 — Reverse direction (JSX→HTML) | M | **P2** | Direction toggle + `jsxToHtml()` reusing inverted `ATTR_RENAMES` |
-| 46 | Random String | RS1 — Advanced per-class character counts | M | **P2** | "Advanced" toggle reveals per-class count inputs |
-| 47 | Lorem | LI2 — Extra types (names/email/url/tweets) | M | **P2** | Needs wordlists or `@faker-js/faker`; `lorem-ipsum` lib can't do it |
-| 48 | Base64 Image | BI1 — Output modes (raw/data-url/css) | S/M | **P2** | `mode` state transforming `dataUrl`; `base64-image.tsx` |
-| 49 | Base64 Image | BI3 — Relocate mode buttons to right panel | S | ✅ **P1 done** | Move Preview/Raw/Data URL/CSS buttons from crowded left header to right panel action bar |
+| 39 | Color | C-color-4 — Enter-any-field bidirectional | M/L | ✅ **P2 done** | Each `Row` editable; `lastEdited` ref prevents loops |
+| 40 | Number Base | NB3 — Enter-any-field bidirectional | M/L | ✅ **P2 done** | Each base row editable; same loop-avoidance pattern |
+| 41 | Number Base | NB4 — Selectable/custom base (2–36) | S/M | ✅ **P2 done** | "Custom" option + radix input; general `parseAny` for any radix |
+| 42 | Color | C-color-1 — RGBA / HSLA / HWB / CMYK outputs | M | ✅ **P2 done** | RGBA/HSLA via tinycolor; HWB/CMYK hand-rolled |
+| 43 | Unix Time | UT2 — Convert from other formats (ISO/RFC) | M | ✅ **P2 done** | `inputMode` toggle (epoch/ISO/RFC); `dayjs` with customParseFormat |
+| 44 | String Case | SC1 — Multi-row (line-by-line) mode | S/M | ✅ **P2 done** | Toggle: `input.split('\n').map(fn).join('\n')`; `string-case.tsx` |
+| 45 | HTML↔JSX | HJ2 — Reverse direction (JSX→HTML) | M | ✅ **P2 done** | Direction toggle + `jsxToHtml()` reusing inverted `ATTR_RENAMES` |
+| 46 | Random String | RS1 — Advanced per-class character counts | M | ✅ **P2 done** | "Advanced" toggle reveals per-class count inputs |
+| 47 | Lorem | LI2 — Extra types (names/email/url/tweets) | M | ✅ **P2 done** | Hand-rolled generators (no faker dep); type selector + CopyButton |
+| 48 | Base64 Image | BI1 — Output modes (raw/data-url/css) | S/M | ✅ **P2 done** | `mode` state transforming `dataUrl`; `base64-image.tsx` |
+| 49 | Base64 Image | BI3 — Relocate mode buttons to right panel | S | ✅ **P1 done** | Mode buttons moved from crowded left header to right panel action bar, next to CopyButton |
 
 ---
 

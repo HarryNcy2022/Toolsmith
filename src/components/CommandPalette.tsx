@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getTools } from '../lib/registry';
+import { getTools, findTool } from '../lib/registry';
+import { detectContentType, getContentTypeInfo, type DetectedContentType } from '../lib/detect-content';
+import { usePendingInput } from '../lib/pending-input';
 import type { Tool } from '../types';
 
 interface CommandPaletteProps {
@@ -11,6 +13,8 @@ interface CommandPaletteProps {
 export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [idx, setIdx] = useState(0);
+  const [detectedContentType, setDetectedContentType] = useState<DetectedContentType | null>(null);
+  const [clipboardText, setClipboardText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const tools = useMemo(() => getTools(), []);
 
@@ -25,26 +29,94 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
     );
   }, [query, tools]);
 
-  // reset index when filter changes
+  // Build clipboard detection section using content-type classifier
+  const detectSection: { type: string; recommended: Tool[]; others: Tool[] } | null = useMemo(() => {
+    const isDetecting = query.trim() === '' && detectedContentType !== null && (clipboardText || detectedContentType === 'image');
+    if (!isDetecting) return null;
+
+    const info = getContentTypeInfo(detectedContentType!);
+    const recommended: Tool[] = [];
+    const usedIds = new Set<string>();
+
+    for (const id of info.recommendedToolIds) {
+      const tool = findTool(id);
+      if (tool) {
+        recommended.push(tool);
+        usedIds.add(id);
+      }
+    }
+
+    const others: Tool[] = [];
+    for (const id of info.otherToolIds) {
+      if (usedIds.has(id)) continue;
+      const tool = findTool(id);
+      if (tool) {
+        others.push(tool);
+        usedIds.add(id);
+      }
+    }
+
+    return { type: info.label, recommended, others };
+  }, [query, detectedContentType, clipboardText]);
+
+  // reset index when detect or filter changes
   useEffect(() => {
     setIdx(0);
-  }, [filtered]);
+  }, [detectSection, filtered]);
 
-  // focus input on open
+  // focus input + read clipboard on open
   useEffect(() => {
     if (open) {
       setQuery('');
       setIdx(0);
-      // small delay so the DOM is ready
+      setDetectedContentType(null);
+      setClipboardText('');
+
+      (async () => {
+        try {
+          const [raw, hasImage] = await Promise.all([
+            window.devutils
+              ? window.devutils.readClipboard()
+              : navigator.clipboard.readText(),
+            window.devutils
+              ? window.devutils.clipboardHasImage()
+              : Promise.resolve(false),
+          ]);
+          const text = (raw ?? '').trim();
+          if (text || hasImage) {
+            setClipboardText(text);
+            const type = detectContentType(text, hasImage);
+            setDetectedContentType(type);
+          }
+        } catch (e) {
+          console.warn('[clipboard-detect] Failed to read clipboard:', e);
+        }
+      })();
+
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
+
+  function handleSelectTool(toolId: string) {
+    onSelect(toolId);
+    onClose();
+  }
+
+  function handleSelectDetect(toolId: string) {
+    usePendingInput.getState().setPendingInput(toolId, clipboardText);
+    onSelect(toolId);
+    onClose();
+  }
+
+  const hasDetectRow = detectSection !== null;
+  const detectRowOffset = hasDetectRow ? detectSection!.recommended.length : 0;
+  const totalCount = filtered.length + detectRowOffset;
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setIdx((i) => Math.min(i + 1, filtered.length - 1));
+        setIdx((i) => Math.min(i + 1, totalCount - 1));
         break;
       case 'ArrowUp':
         e.preventDefault();
@@ -52,9 +124,12 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
         break;
       case 'Enter':
         e.preventDefault();
-        if (filtered[idx]) {
-          onSelect(filtered[idx].id);
-          onClose();
+        if (hasDetectRow && idx < detectRowOffset) {
+          handleSelectDetect(detectSection!.recommended[idx].id);
+        } else {
+          const itemIdx = idx - detectRowOffset;
+          const item = filtered[itemIdx];
+          if (item) handleSelectTool(item.id);
         }
         break;
       case 'Escape':
@@ -86,28 +161,92 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
           />
         </div>
         <div className="max-h-80 overflow-auto py-1">
-          {filtered.length === 0 ? (
-            <div className="px-4 py-6 text-sm text-neutral-500 text-center">No tools found</div>
+          {detectSection ? (
+            <>
+              {/* Clipboard detection section header */}
+              <div className="px-4 py-1.5 text-[10px] uppercase tracking-wider text-neutral-500 select-none">
+                Clipboard detection: {detectSection.type}
+              </div>
+
+              {/* Recommended tool rows */}
+              {detectSection.recommended.map((tool, i) => (
+                <button
+                  key={tool.id}
+                  onClick={() => handleSelectDetect(tool.id)}
+                  className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors ${
+                    idx === i
+                      ? 'bg-blue-600/20 text-blue-300'
+                      : 'text-neutral-300 hover:bg-neutral-800'
+                  }`}
+                >
+                  <span className="text-xs uppercase tracking-wide text-neutral-600 w-20 shrink-0">
+                    {tool.category}
+                  </span>
+                  <span className="text-sm flex-1">{tool.name}</span>
+                  <span className="px-1.5 py-0.5 text-[10px] rounded bg-neutral-800 text-neutral-400 border border-neutral-700">
+                    recommended
+                  </span>
+                </button>
+              ))}
+
+              {/* Separator */}
+              <hr className="border-neutral-800 mx-3 my-1" />
+
+              {/* All tools sub-header */}
+              <div className="px-4 py-1.5 text-[10px] uppercase tracking-wider text-neutral-500 select-none">
+                All tools ({filtered.length})
+              </div>
+
+              {/* Full tool list */}
+              {filtered.length === 0 ? (
+                <div className="px-4 py-6 text-sm text-neutral-500 text-center">No tools found</div>
+              ) : (
+                filtered.map((item, i) => {
+                  const actualIdx = i + detectRowOffset;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleSelectTool(item.id)}
+                      className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors ${
+                        actualIdx === idx
+                          ? 'bg-blue-600/20 text-blue-300'
+                          : 'text-neutral-300 hover:bg-neutral-800'
+                      }`}
+                    >
+                      <span className="text-xs uppercase tracking-wide text-neutral-600 w-20 shrink-0">
+                        {item.category}
+                      </span>
+                      <span className="text-sm">{item.name}</span>
+                    </button>
+                  );
+                })
+              )}
+            </>
           ) : (
-            filtered.map((tool, i) => (
-              <button
-                key={tool.id}
-                onClick={() => {
-                  onSelect(tool.id);
-                  onClose();
-                }}
-                className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors ${
-                  i === idx
-                    ? 'bg-blue-600/20 text-blue-300'
-                    : 'text-neutral-300 hover:bg-neutral-800'
-                }`}
-              >
-                <span className="text-xs uppercase tracking-wide text-neutral-600 w-20 shrink-0">
-                  {tool.category}
-                </span>
-                <span className="text-sm">{tool.name}</span>
-              </button>
-            ))
+            /* Normal mode — no clipboard detection */
+            filtered.length === 0 ? (
+              <div className="px-4 py-6 text-sm text-neutral-500 text-center">No tools found</div>
+            ) : (
+              filtered.map((item, i) => {
+                const actualIdx = i + detectRowOffset;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleSelectTool(item.id)}
+                    className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors ${
+                      actualIdx === idx
+                        ? 'bg-blue-600/20 text-blue-300'
+                        : 'text-neutral-300 hover:bg-neutral-800'
+                    }`}
+                  >
+                    <span className="text-xs uppercase tracking-wide text-neutral-600 w-20 shrink-0">
+                      {item.category}
+                    </span>
+                    <span className="text-sm">{item.name}</span>
+                  </button>
+                );
+              })
+            )
           )}
         </div>
         <div className="px-4 py-2 border-t border-neutral-800 text-[10px] text-neutral-600 flex gap-4">

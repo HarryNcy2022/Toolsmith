@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { SwapButton } from '../components/SwapButton';
+import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 
 // Renderer is a browser context (nodeIntegration:false) → no Node Buffer.
@@ -48,7 +49,7 @@ function Component() {
           Decode
         </button>
       </div>
-      <div className="flex gap-3 flex-1 min-h-0">
+      <SplitPane orientation="row" id="base64">
         <IOPanel
           title={dir === 'encode' ? 'Plain text' : 'Base64'}
           value={input}
@@ -74,7 +75,7 @@ function Component() {
           readOnly
           error={error}
         />
-      </div>
+      </SplitPane>
     </div>
   );
 }

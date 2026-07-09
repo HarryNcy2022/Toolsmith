@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { registerTool } from '../lib/registry';
+import { SplitPane } from '../components/SplitPane';
 import { CopyButton } from '../components/CopyButton';
 
 const FLAGS = ['g', 'i', 'm', 's', 'u', 'y'] as const;
@@ -174,7 +175,7 @@ function Component() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-0">
+      <SplitPane orientation="row" id="regexp-tester">
         <div className="flex flex-col min-h-0 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden">
           <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-neutral-400 border-b border-neutral-800">
             Test string
@@ -214,7 +215,7 @@ function Component() {
             </div>
           )}
         </div>
-      </div>
+      </SplitPane>
 
       <div className="flex flex-col min-h-0 bg-neutral-950 border border-neutral-800 border-dashed rounded-lg overflow-hidden shrink-0 max-h-48">
         <div className="px-3 py-1.5 text-xs font-medium uppercase tracking-wide text-neutral-500 border-b border-neutral-800 flex items-center justify-between">

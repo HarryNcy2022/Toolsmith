@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { diffLines, diffWordsWithSpace, diffChars } from 'diff';
+import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 
 type Granularity = 'line' | 'word' | 'char';
@@ -48,7 +49,7 @@ function Component() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 flex-1 min-h-0">
+      <SplitPane orientation="row" id="text-diff">
         <textarea
           value={left}
           onChange={(e) => setLeft(e.target.value)}
@@ -61,7 +62,7 @@ function Component() {
           placeholder="Changed"
           className="w-full p-3 bg-neutral-900/50 border border-neutral-800 rounded-lg text-sm font-mono text-neutral-200 resize-none focus:outline-none focus:border-neutral-600"
         />
-      </div>
+      </SplitPane>
 
       <div className="flex-1 min-h-0 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-auto p-3">
         <pre className="text-sm font-mono whitespace-pre-wrap break-words">

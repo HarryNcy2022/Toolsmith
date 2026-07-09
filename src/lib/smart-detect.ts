@@ -24,16 +24,24 @@ const RULES: Rule[] = [
   { test: /^\s*#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})\s*$/i, toolId: 'color', score: 100 },
   // URL
   { test: /^\s*https?:\/\/[^\s]+/, toolId: 'url-parser', score: 90 },
+  // HTML tags (<tag> or </tag>)
+  { test: /^\s*</, toolId: 'html-to-jsx', score: 85 },
   // JSON
   { test: /^\s*[{[]/, toolId: 'json-formatter', score: 80 },
   // SQL
   { test: /^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)\s/i, toolId: 'sql-format', score: 75 },
+  // CSS rule (selector followed by {)
+  { test: /^\s*[.#@]?[\w-]+(?:\s*\{)/m, toolId: 'css-format', score: 75 },
   // YAML (heuristic: key: value at line start)
   { test: /^\s*[\w][\w -]*:\s+\S/m, toolId: 'yaml-json', score: 70 },
+  // Markdown heading or link
+  { test: /^\s*(#{1,6}\s|\[.+?\]\(.+?\))/, toolId: 'markdown-preview', score: 65 },
   // Unix epoch (10-13 digit number)
   { test: /^\s*(\d{10}|\d{13})\s*$/, toolId: 'unix-time', score: 60 },
   // Base64 (long alphanumeric+/= string, no spaces, length multiple of 4ish)
   { test: /^\s*[A-Za-z0-9+\/\n]{20,}={0,2}\s*$/, toolId: 'base64', score: 50 },
+  // IP address (dotted decimal)
+  { test: /^\s*\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s*$/, toolId: 'number-base', score: 50 },
   // Number base (plain numeric)
   { test: /^\s*-?\d+\s*$/, toolId: 'number-base', score: 40 }
 ];

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
+import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 
 // Escape control chars to backslash sequences; reverse for unescape.
@@ -66,7 +67,7 @@ function Component() {
           Unescape
         </button>
       </div>
-      <div className="flex gap-3 flex-1 min-h-0">
+      <SplitPane orientation="row" id="backslash-escape">
         <IOPanel
           title="Input"
           value={input}
@@ -80,7 +81,7 @@ function Component() {
           }
         />
         <IOPanel title="Output" value={output} readOnly error={error} />
-      </div>
+      </SplitPane>
     </div>
   );
 }

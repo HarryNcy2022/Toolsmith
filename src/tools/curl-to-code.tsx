@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
+import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 
 // curlconverter is heavy (bundles a WASM bash parser via tree-sitter, uses
@@ -103,7 +104,7 @@ function Component() {
         </select>
         {busy && <span className="text-neutral-600 ml-2">converting…</span>}
       </label>
-      <div className="flex gap-3 flex-1 min-h-0">
+      <SplitPane orientation="row" id="curl-to-code">
         <IOPanel
           title="cURL command"
           value={input}
@@ -117,7 +118,7 @@ function Component() {
           }
         />
         <IOPanel title="Output" value={out} readOnly placeholder="Generated code appears here" error={error} />
-      </div>
+      </SplitPane>
     </div>
   );
 }

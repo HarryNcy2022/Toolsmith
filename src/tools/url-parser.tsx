@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { registerTool } from '../lib/registry';
+import { SplitPane } from '../components/SplitPane';
 
 function Component() {
   const [input, setInput] = useState('');
@@ -35,7 +36,7 @@ function Component() {
   }, [input]);
 
   return (
-    <div className="flex gap-3 h-full">
+    <SplitPane orientation="row" id="url-parser" className="flex-1 min-h-0">
       <IOPanel
         title="URL"
         value={input}
@@ -49,7 +50,7 @@ function Component() {
         }
       />
       <IOPanel title="Parsed" value={output} readOnly placeholder="Breakdown appears here" error={error} />
-    </div>
+    </SplitPane>
   );
 }
 

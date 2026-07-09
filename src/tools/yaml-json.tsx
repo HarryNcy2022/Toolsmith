@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import yaml from 'js-yaml';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
+import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 import { json } from '@codemirror/lang-json';
 import { yaml as yamlLang } from '@codemirror/lang-yaml';
@@ -53,7 +54,7 @@ function Component() {
           </select>
         </label>
       </div>
-      <div className="flex gap-3 flex-1 min-h-0">
+      <SplitPane orientation="row" id="yaml-json">
         <IOPanel
           title={dir === 'yaml2json' ? 'YAML' : 'JSON'}
           value={input}
@@ -74,7 +75,7 @@ function Component() {
           extensions={dir === 'yaml2json' ? [json()] : [yamlLang()]}
           error={error}
         />
-      </div>
+      </SplitPane>
     </div>
   );
 }

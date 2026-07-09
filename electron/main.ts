@@ -72,6 +72,11 @@ ipcMain.handle('app:read-clipboard', async () => {
   return clipboard.readText();
 });
 
+ipcMain.handle('app:clipboard-has-image', async () => {
+  const { clipboard } = await import('electron');
+  return clipboard.has('image/png') || clipboard.has('image/jpeg');
+});
+
 void app.whenReady().then(() => {
   mainWindow = createWindow();
   mainWindow.on('closed', () => {

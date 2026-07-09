@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { quicktype, jsonInputForTargetLanguage, InputData } from 'quicktype-core';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
+import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 
 const TARGETS = [
@@ -138,7 +139,7 @@ function Component() {
         </label>
         {busy && <span className="text-neutral-600 text-xs">converting…</span>}
       </div>
-      <div className="flex gap-3 flex-1 min-h-0">
+      <SplitPane orientation="row" id="json-to-code">
         <IOPanel
           title="JSON"
           value={input}
@@ -152,7 +153,7 @@ function Component() {
           }
         />
         <IOPanel title="Generated types" value={out} readOnly placeholder="Type definitions appear here" error={error} />
-      </div>
+      </SplitPane>
     </div>
   );
 }

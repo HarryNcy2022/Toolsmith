@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 import { CopyButton } from '../components/CopyButton';
 
@@ -75,7 +76,7 @@ function Component() {
 
   return (
     <div className="flex flex-col gap-3 h-full">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 flex-1 min-h-0">
+      <SplitPane orientation="row" id="base64-image">
         {/* drop zone + data url */}
         <div className="flex flex-col min-h-0 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden">
           <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-neutral-400 border-b border-neutral-800 flex items-center justify-between">
@@ -187,7 +188,7 @@ function Component() {
             </div>
           )}
         </div>
-      </div>
+      </SplitPane>
     </div>
   );
 }
