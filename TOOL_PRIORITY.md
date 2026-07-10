@@ -1,6 +1,6 @@
 # Pending Tools
 
-DevUtils currently ships 35 tools. New tools are demand-driven; only these remain under consideration.
+DevUtils currently ships 36 tools. New tools are demand-driven; only these remain under consideration.
 
 | Tool | Category | Status | Implementation note |
 |------|----------|--------|---------------------|

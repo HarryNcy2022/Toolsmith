@@ -53,7 +53,7 @@ export const CONTENT_TYPE_TOOLS: Record<
     recommended: ['json-formatter', 'yaml-json', 'json-to-code']
   },
   sql: {
-    recommended: ['sql-format', 'json-formatter', 'yaml-json']
+    recommended: ['sql-format', 'sql-log-reconstructor', 'json-formatter']
   },
   yaml: {
     recommended: ['yaml-json', 'json-formatter', 'sql-format']
@@ -83,7 +83,7 @@ export const CONTENT_TYPE_TOOLS: Record<
  *  2. Starts with HTML doctype or opening tag → 'html'
  *  3. Starts with `{` or `[` and parses as JSON → 'json'
  *  4. CSS selector pattern or at-rule → 'css'
- *  5. SQL keyword at line start → 'sql'
+ *  5. SQL keyword or supported SQL-log marker → 'sql'
  *  6. YAML key: value pattern → 'yaml'
  *  7. Markdown heading or inline link → 'markdown'
  *  8. http(s) URL → 'url'
@@ -132,9 +132,12 @@ export function detectContentType(
     return 'css';
   }
 
-  // SQL: DML/DDL keyword at line start
+  // SQL: DML/DDL keyword or supported prepared-statement log marker
   if (
-    /^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)\s/im.test(trimmed)
+    /^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)\s/im.test(trimmed) ||
+    /\bPreparing:\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)\s/im.test(trimmed) ||
+    /\bHibernate:\s*/im.test(trimmed) ||
+    /SqlStatementLogger:logStatement|BasicBinder:bind|org\.hibernate\.orm\.jdbc\.bind/i.test(trimmed)
   ) {
     return 'sql';
   }

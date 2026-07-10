@@ -14,6 +14,7 @@ import './text-diff';
 import './json-csv';
 import './hash';
 import './sql-format';
+import './sql-log-reconstructor';
 import './string-case';
 import './color';
 import './random-string';
