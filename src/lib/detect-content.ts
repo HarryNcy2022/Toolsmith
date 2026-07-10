@@ -3,7 +3,7 @@
  * (or image flag) represents and maps it to relevant tool IDs.
  *
  * Pure TypeScript: no React dependencies, no external imports.
- * Replaces the regex scoring system in smart-detect.ts for the Ctrl+K palette.
+ * Used by the Ctrl+K palette to recommend tools for clipboard content.
  */
 
 export type DetectedContentType =
@@ -24,8 +24,6 @@ export interface ContentTypeInfo {
   label: string;
   /** Top 3 recommended tool IDs for this content type */
   recommendedToolIds: string[];
-  /** Other relevant tool IDs for this content type */
-  otherToolIds: string[];
 }
 
 const LABELS: Record<DetectedContentType, string> = {
@@ -43,56 +41,37 @@ const LABELS: Record<DetectedContentType, string> = {
 
 export const CONTENT_TYPE_TOOLS: Record<
   DetectedContentType,
-  { recommended: string[]; others: string[] }
+  { recommended: string[] }
 > = {
   html: {
-    recommended: ['html-to-jsx', 'html-format', 'html-preview'],
-    others: ['markdown-preview', 'xml-format', 'url-encode', 'base64'],
+    recommended: ['html-to-jsx', 'html-format', 'html-preview']
   },
   css: {
-    recommended: ['css-format', 'scss-format', 'html-format'],
-    others: ['html-to-jsx', 'url-encode', 'number-base'],
+    recommended: ['css-format', 'scss-format', 'html-format']
   },
   json: {
-    recommended: ['json-formatter', 'yaml-json', 'json-to-code'],
-    others: ['json-csv', 'sql-format', 'url-parser', 'base64', 'text-diff'],
+    recommended: ['json-formatter', 'yaml-json', 'json-to-code']
   },
   sql: {
-    recommended: ['sql-format', 'json-formatter', 'yaml-json'],
-    others: ['text-diff', 'base64'],
+    recommended: ['sql-format', 'json-formatter', 'yaml-json']
   },
   yaml: {
-    recommended: ['yaml-json', 'json-formatter', 'sql-format'],
-    others: ['markdown-preview', 'base64'],
+    recommended: ['yaml-json', 'json-formatter', 'sql-format']
   },
   markdown: {
-    recommended: ['markdown-preview', 'html-format', 'html-preview'],
-    others: ['html-to-jsx', 'text-diff'],
+    recommended: ['markdown-preview', 'html-format', 'html-preview']
   },
   url: {
-    recommended: ['url-parser', 'url-encode', 'json-formatter'],
-    others: ['base64', 'yaml-json', 'text-diff'],
+    recommended: ['url-parser', 'url-encode', 'json-formatter']
   },
   jwt: {
-    recommended: ['jwt-debugger', 'base64', 'json-formatter'],
-    others: ['url-parser', 'text-diff'],
+    recommended: ['jwt-debugger', 'base64', 'json-formatter']
   },
   image: {
-    recommended: ['base64-image', 'qr-code'],
-    others: ['base64', 'number-base'],
+    recommended: ['base64-image', 'qr-code']
   },
   string: {
-    recommended: ['number-base', 'base64', 'url-encode'],
-    others: [
-      'text-diff',
-      'string-case',
-      'unix-time',
-      'regexp-tester',
-      'line-sort',
-      'hash',
-      'random-string',
-      'lorem-ipsum',
-    ],
+    recommended: ['number-base', 'base64', 'url-encode']
   },
 };
 
@@ -193,7 +172,6 @@ export function getContentTypeInfo(type: DetectedContentType): ContentTypeInfo {
   return {
     type,
     label: LABELS[type],
-    recommendedToolIds: tools.recommended,
-    otherToolIds: tools.others,
+    recommendedToolIds: tools.recommended
   };
 }

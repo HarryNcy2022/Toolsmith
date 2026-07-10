@@ -1,7 +1,11 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
-import tinycolor from 'tinycolor2';
 import { registerTool } from '../lib/registry';
 import { CopyButton } from '../components/CopyButton';
+import {
+  convertColor,
+  normalizeColorField,
+  type EditableColorField
+} from '../lib/color-convert';
 
 function EditableRow({ label, value, onChange, placeholder }: {
   label: string;
@@ -23,119 +27,13 @@ function EditableRow({ label, value, onChange, placeholder }: {
   );
 }
 
-// ── Color string parsers ─────────────────────────────────────────
-
-function parseHsvString(s: string): { h: number; s: number; v: number } | null {
-  const m = s.match(/hsv\(\s*([\d.]+)\s*[°,]?\s*([\d.]+)%?\s*[°,]?\s*([\d.]+)%?\s*\)/i);
-  if (!m) return null;
-  return { h: parseFloat(m[1]), s: parseFloat(m[2]), v: parseFloat(m[3]) };
-}
-
-function parseHwbString(s: string): { h: number; w: number; b: number } | null {
-  const m = s.match(/hwb\(\s*([\d.]+)\s*[°,]?\s*([\d.]+)%?\s*[°,]?\s*([\d.]+)%?\s*\)/i);
-  if (!m) return null;
-  return { h: parseFloat(m[1]), w: parseFloat(m[2]), b: parseFloat(m[3]) };
-}
-
-function parseCmykString(s: string): { c: number; m: number; y: number; k: number } | null {
-  const m = s.match(/cmyk\(\s*([\d.]+)%?\s*,\s*([\d.]+)%?\s*,\s*([\d.]+)%?\s*,\s*([\d.]+)%?\s*\)/i);
-  if (!m) return null;
-  return { c: parseFloat(m[1]), m: parseFloat(m[2]), y: parseFloat(m[3]), k: parseFloat(m[4]) };
-}
-
-// ── Color space converters ───────────────────────────────────────
-
-function hwbToRgb(h: number, w: number, b: number): { r: number; g: number; b: number } {
-  const hNorm = h / 360;
-  const wNorm = w / 100;
-  const bNorm = b / 100;
-
-  const sum = wNorm + bNorm;
-  if (sum >= 1) {
-    const gray = Math.round((wNorm / sum) * 255);
-    return { r: gray, g: gray, b: gray };
-  }
-
-  const v = 1 - bNorm;
-  const s = wNorm === 0 ? 0 : 1 - wNorm / v;
-  return hsvToRgb(hNorm, s, v);
-}
-
-function hsvToRgb(h: number, s: number, v: number): { r: number; g: number; b: number } {
-  const i = Math.floor(h * 6);
-  const f = h * 6 - i;
-  const p = v * (1 - s);
-  const q = v * (1 - f * s);
-  const t = v * (1 - (1 - f) * s);
-  let r = 0, g = 0, b = 0;
-  switch (i % 6) {
-    case 0: r = v; g = t; b = p; break;
-    case 1: r = q; g = v; b = p; break;
-    case 2: r = p; g = v; b = t; break;
-    case 3: r = p; g = q; b = v; break;
-    case 4: r = t; g = p; b = v; break;
-    case 5: r = v; g = p; b = q; break;
-  }
-  return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
-}
-
-function cmykToRgb(c: number, m: number, y: number, k: number): { r: number; g: number; b: number } {
-  const cNorm = c / 100;
-  const mNorm = m / 100;
-  const yNorm = y / 100;
-  const kNorm = k / 100;
-  return {
-    r: Math.round(255 * (1 - cNorm) * (1 - kNorm)),
-    g: Math.round(255 * (1 - mNorm) * (1 - kNorm)),
-    b: Math.round(255 * (1 - yNorm) * (1 - kNorm)),
-  };
-}
-
-// ── Component ────────────────────────────────────────────────────
-
-type FieldKey = 'input' | 'hex' | 'hex8' | 'rgb' | 'hsl' | 'hsv' | 'name' | 'rgba' | 'hsla' | 'hwb' | 'cmyk';
+type FieldKey = 'input' | EditableColorField;
 
 function Component() {
   const [input, setInput] = useState('#3b82f6');
   const lastEditedField = useRef<FieldKey | null>(null);
 
-  const results = useMemo(() => {
-    const c = tinycolor(input);
-    if (!c.isValid()) return null;
-
-    const rgb = c.toRgb();
-    const hsl = c.toHsl();
-    const hsv = c.toHsv();
-
-    // HWB
-    const w = (1 - hsv.s) * hsv.v * 100;
-    const b = (1 - hsv.v) * 100;
-
-    // CMYK
-    const rn = rgb.r / 255, gn = rgb.g / 255, bn = rgb.b / 255;
-    const k = 1 - Math.max(rn, gn, bn);
-    let c_, m_, y_;
-    if (k === 1) {
-      c_ = m_ = y_ = 0;
-    } else {
-      c_ = ((1 - rn - k) / (1 - k)) * 100;
-      m_ = ((1 - gn - k) / (1 - k)) * 100;
-      y_ = ((1 - bn - k) / (1 - k)) * 100;
-    }
-
-    return {
-      hex: c.toHexString(),
-      hex8: c.toHex8String(),
-      rgb: c.toRgbString(),
-      hsl: c.toHslString(),
-      hsv: c.toHsvString(),
-      name: c.toName() || '(unnamed)',
-      rgba: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${rgb.a.toFixed(2)})`,
-      hsla: `hsla(${hsl.h.toFixed(1)}, ${(hsl.s * 100).toFixed(1)}%, ${(hsl.l * 100).toFixed(1)}%, ${hsl.a.toFixed(2)})`,
-      hwb: `hwb(${hsv.h.toFixed(1)}, ${w.toFixed(1)}%, ${b.toFixed(1)}%)`,
-      cmyk: `cmyk(${c_.toFixed(1)}%, ${m_.toFixed(1)}%, ${y_.toFixed(1)}%, ${(k * 100).toFixed(1)}%)`,
-    };
-  }, [input]);
+  const results = useMemo(() => convertColor(input), [input]);
 
   // Reset the edit guard after every render so any field can be edited next
   useEffect(() => {
@@ -154,42 +52,13 @@ function Component() {
     setInput(value);
   }
 
-  function handleRowChange(field: Exclude<FieldKey, 'input'>, value: string) {
+  function handleRowChange(field: EditableColorField, value: string) {
     // Guard: skip if we're still responding to the last edit from this field
     if (lastEditedField.current === field) return;
     lastEditedField.current = field;
 
-    let parsed: tinycolor.Instance | null = null;
-
-    // Fields that tinycolor can parse natively
-    if (field === 'hex' || field === 'hex8' || field === 'rgb' || field === 'hsl' || field === 'rgba' || field === 'hsla' || field === 'name') {
-      const tc = tinycolor(value);
-      if (tc.isValid()) parsed = tc;
-    } else if (field === 'hsv') {
-      const p = parseHsvString(value);
-      if (p) {
-        const tc = tinycolor(p);
-        if (tc.isValid()) parsed = tc;
-      }
-    } else if (field === 'hwb') {
-      const p = parseHwbString(value);
-      if (p) {
-        const r = hwbToRgb(p.h, p.w, p.b);
-        const tc = tinycolor(r);
-        if (tc.isValid()) parsed = tc;
-      }
-    } else if (field === 'cmyk') {
-      const p = parseCmykString(value);
-      if (p) {
-        const r = cmykToRgb(p.c, p.m, p.y, p.k);
-        const tc = tinycolor(r);
-        if (tc.isValid()) parsed = tc;
-      }
-    }
-
-    if (parsed) {
-      setInput(parsed.toHexString());
-    }
+    const normalized = normalizeColorField(field, value);
+    if (normalized) setInput(normalized);
   }
 
   return (

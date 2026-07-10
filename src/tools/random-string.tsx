@@ -1,34 +1,14 @@
 import { useState } from 'react';
 import { registerTool } from '../lib/registry';
 import { CopyButton } from '../components/CopyButton';
-
-const PRESETS: Record<string, string> = {
-  alphanumeric: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
-  letters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
-  digits: '0123456789',
-  hex: '0123456789abcdef',
-  'hex-upper': '0123456789ABCDEF',
-  base62: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
-  symbols: '!@#$%^&*()-_=+[]{};:,.?/'
-};
-
-const CHAR_CLASSES = {
-  uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-  lowercase: 'abcdefghijklmnopqrstuvwxyz',
-  digits: '0123456789',
-  symbols: '!@#$%^&*()_+-=[]{}|;:,.<>?/~`',
-} as const;
-
-function randomFrom(charset: string, len: number): string {
-  const out = new Array(len);
-  const buf = new Uint32Array(len);
-  crypto.getRandomValues(buf);
-  for (let i = 0; i < len; i++) out[i] = charset[buf[i] % charset.length];
-  return out.join('');
-}
+import {
+  generateRandomStrings,
+  RANDOM_STRING_PRESETS,
+  type RandomStringPreset
+} from '../lib/random-string';
 
 function Component() {
-  const [preset, setPreset] = useState<keyof typeof PRESETS>('alphanumeric');
+  const [preset, setPreset] = useState<RandomStringPreset>('alphanumeric');
   const [custom, setCustom] = useState('');
   const [length, setLength] = useState(32);
   const [count, setCount] = useState(5);
@@ -39,50 +19,16 @@ function Component() {
   const [digitMin, setDigitMin] = useState(0);
   const [symMin, setSymMin] = useState(0);
 
-  function shuffle(s: string): string {
-    const arr = s.split('');
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr.join('');
-  }
-
   function regen() {
-    const charset = custom || PRESETS[preset];
-    if (!charset) return;
-    if (advanced && !custom) {
-      setResults(Array.from({ length: count }, () => {
-        let upperCount = upperMin;
-        let lowerCount = lowerMin;
-        let digitCount = digitMin;
-        let symCount = symMin;
-        const sum = upperCount + lowerCount + digitCount + symCount;
-        let remaining: number;
-        if (sum > length) {
-          const scale = length / sum;
-          upperCount = Math.floor(upperCount * scale);
-          lowerCount = Math.floor(lowerCount * scale);
-          digitCount = Math.floor(digitCount * scale);
-          symCount = Math.floor(symCount * scale);
-          remaining = length - (upperCount + lowerCount + digitCount + symCount);
-        } else {
-          remaining = length - sum;
-        }
-        const parts: string[] = [];
-        if (upperCount > 0) parts.push(randomFrom(CHAR_CLASSES.uppercase, upperCount));
-        if (lowerCount > 0) parts.push(randomFrom(CHAR_CLASSES.lowercase, lowerCount));
-        if (digitCount > 0) parts.push(randomFrom(CHAR_CLASSES.digits, digitCount));
-        if (symCount > 0) parts.push(randomFrom(CHAR_CLASSES.symbols, symCount));
-        if (remaining > 0) {
-          const all = CHAR_CLASSES.uppercase + CHAR_CLASSES.lowercase + CHAR_CLASSES.digits + CHAR_CLASSES.symbols;
-          parts.push(randomFrom(all, remaining));
-        }
-        return shuffle(parts.join(''));
-      }));
-    } else {
-      setResults(Array.from({ length: count }, () => randomFrom(charset, length)));
-    }
+    setResults(generateRandomStrings({
+      preset,
+      customCharset: custom,
+      length,
+      count,
+      minimums: advanced && !custom
+        ? { uppercase: upperMin, lowercase: lowerMin, digits: digitMin, symbols: symMin }
+        : undefined
+    }));
   }
 
   return (
@@ -93,12 +39,12 @@ function Component() {
           <select
             value={preset}
             onChange={(e) => {
-              setPreset(e.target.value as keyof typeof PRESETS);
+              setPreset(e.target.value as RandomStringPreset);
               setCustom('');
             }}
             className="bg-neutral-900 border border-neutral-800 rounded px-2 py-1.5 text-neutral-200"
           >
-            {Object.keys(PRESETS).map((p) => (
+            {(Object.keys(RANDOM_STRING_PRESETS) as RandomStringPreset[]).map((p) => (
               <option key={p} value={p}>
                 {p}
               </option>

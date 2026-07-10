@@ -10,6 +10,36 @@ interface CommandPaletteProps {
   onSelect: (id: string) => void;
 }
 
+interface ToolRowProps {
+  tool: Tool;
+  selected: boolean;
+  onSelect: () => void;
+  badge?: string;
+}
+
+function ToolRow({ tool, selected, onSelect, badge }: ToolRowProps) {
+  return (
+    <button
+      onClick={onSelect}
+      className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors ${
+        selected
+          ? 'bg-blue-600/20 text-blue-300'
+          : 'text-neutral-300 hover:bg-neutral-800'
+      }`}
+    >
+      <span className="text-xs uppercase tracking-wide text-neutral-600 w-20 shrink-0">
+        {tool.category}
+      </span>
+      <span className="text-sm flex-1">{tool.name}</span>
+      {badge && (
+        <span className="px-1.5 py-0.5 text-[10px] rounded bg-neutral-800 text-neutral-400 border border-neutral-700">
+          {badge}
+        </span>
+      )}
+    </button>
+  );
+}
+
 export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [idx, setIdx] = useState(0);
@@ -30,33 +60,20 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
   }, [query, tools]);
 
   // Build clipboard detection section using content-type classifier
-  const detectSection: { type: string; recommended: Tool[]; others: Tool[] } | null = useMemo(() => {
+  const detectSection: { type: string; recommended: Tool[] } | null = useMemo(() => {
     const isDetecting = query.trim() === '' && detectedContentType !== null && (clipboardText || detectedContentType === 'image');
     if (!isDetecting) return null;
 
     const info = getContentTypeInfo(detectedContentType!);
     const recommended: Tool[] = [];
-    const usedIds = new Set<string>();
-
     for (const id of info.recommendedToolIds) {
       const tool = findTool(id);
       if (tool) {
         recommended.push(tool);
-        usedIds.add(id);
       }
     }
 
-    const others: Tool[] = [];
-    for (const id of info.otherToolIds) {
-      if (usedIds.has(id)) continue;
-      const tool = findTool(id);
-      if (tool) {
-        others.push(tool);
-        usedIds.add(id);
-      }
-    }
-
-    return { type: info.label, recommended, others };
+    return { type: info.label, recommended };
   }, [query, detectedContentType, clipboardText]);
 
   // reset index when detect or filter changes
@@ -161,7 +178,7 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
           />
         </div>
         <div className="max-h-80 overflow-auto py-1">
-          {detectSection ? (
+          {detectSection && (
             <>
               {/* Clipboard detection section header */}
               <div className="px-4 py-1.5 text-[10px] uppercase tracking-wider text-neutral-500 select-none">
@@ -170,23 +187,13 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
 
               {/* Recommended tool rows */}
               {detectSection.recommended.map((tool, i) => (
-                <button
+                <ToolRow
                   key={tool.id}
-                  onClick={() => handleSelectDetect(tool.id)}
-                  className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors ${
-                    idx === i
-                      ? 'bg-blue-600/20 text-blue-300'
-                      : 'text-neutral-300 hover:bg-neutral-800'
-                  }`}
-                >
-                  <span className="text-xs uppercase tracking-wide text-neutral-600 w-20 shrink-0">
-                    {tool.category}
-                  </span>
-                  <span className="text-sm flex-1">{tool.name}</span>
-                  <span className="px-1.5 py-0.5 text-[10px] rounded bg-neutral-800 text-neutral-400 border border-neutral-700">
-                    recommended
-                  </span>
-                </button>
+                  tool={tool}
+                  selected={idx === i}
+                  onSelect={() => handleSelectDetect(tool.id)}
+                  badge="recommended"
+                />
               ))}
 
               {/* Separator */}
@@ -197,56 +204,19 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
                 All tools ({filtered.length})
               </div>
 
-              {/* Full tool list */}
-              {filtered.length === 0 ? (
-                <div className="px-4 py-6 text-sm text-neutral-500 text-center">No tools found</div>
-              ) : (
-                filtered.map((item, i) => {
-                  const actualIdx = i + detectRowOffset;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => handleSelectTool(item.id)}
-                      className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors ${
-                        actualIdx === idx
-                          ? 'bg-blue-600/20 text-blue-300'
-                          : 'text-neutral-300 hover:bg-neutral-800'
-                      }`}
-                    >
-                      <span className="text-xs uppercase tracking-wide text-neutral-600 w-20 shrink-0">
-                        {item.category}
-                      </span>
-                      <span className="text-sm">{item.name}</span>
-                    </button>
-                  );
-                })
-              )}
             </>
+          )}
+          {filtered.length === 0 ? (
+            <div className="px-4 py-6 text-sm text-neutral-500 text-center">No tools found</div>
           ) : (
-            /* Normal mode — no clipboard detection */
-            filtered.length === 0 ? (
-              <div className="px-4 py-6 text-sm text-neutral-500 text-center">No tools found</div>
-            ) : (
-              filtered.map((item, i) => {
-                const actualIdx = i + detectRowOffset;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleSelectTool(item.id)}
-                    className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors ${
-                      actualIdx === idx
-                        ? 'bg-blue-600/20 text-blue-300'
-                        : 'text-neutral-300 hover:bg-neutral-800'
-                    }`}
-                  >
-                    <span className="text-xs uppercase tracking-wide text-neutral-600 w-20 shrink-0">
-                      {item.category}
-                    </span>
-                    <span className="text-sm">{item.name}</span>
-                  </button>
-                );
-              })
-            )
+            filtered.map((tool, i) => (
+              <ToolRow
+                key={tool.id}
+                tool={tool}
+                selected={idx === i + detectRowOffset}
+                onSelect={() => handleSelectTool(tool.id)}
+              />
+            ))
           )}
         </div>
         <div className="px-4 py-2 border-t border-neutral-800 text-[10px] text-neutral-600 flex gap-4">

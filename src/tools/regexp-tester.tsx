@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { registerTool } from '../lib/registry';
 import { SplitPane } from '../components/SplitPane';
 import { CopyButton } from '../components/CopyButton';
+import { highlightRegex, replaceRegex } from '../lib/regexp';
 
 const FLAGS = ['g', 'i', 'm', 's', 'u', 'y'] as const;
 
@@ -14,74 +15,6 @@ const FLAG_HELP: Record<string, string> = {
   y: 'sticky — match at the current position (lastIndex)'
 };
 
-interface MatchInfo {
-  match: string;
-  index: number;
-  groups: string[];
-}
-
-function highlight(text: string, pattern: string, flags: string) {
-  if (!pattern) return { html: escapeHtml(text), matches: [], error: null };
-  let re: RegExp;
-  try {
-    re = new RegExp(pattern, flags.includes('g') ? flags : flags + 'g');
-  } catch (e) {
-    return { html: escapeHtml(text), matches: [], error: e instanceof Error ? e.message : String(e) };
-  }
-  const matches: MatchInfo[] = [];
-  let html = '';
-  let last = 0;
-  let m: RegExpExecArray | null;
-  let safety = 0;
-  while ((m = re.exec(text)) !== null) {
-    if (m[0].length === 0) {
-      re.lastIndex++;
-      continue;
-    }
-    matches.push({ match: m[0], index: m.index, groups: m.slice(1) });
-    html += escapeHtml(text.slice(last, m.index));
-    html += `<mark class="bg-yellow-500/30 text-yellow-200 rounded px-0.5">${escapeHtml(m[0])}</mark>`;
-    last = m.index + m[0].length;
-    if (++safety > 5000) break;
-  }
-  html += escapeHtml(text.slice(last));
-  return { html, matches, error: null };
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
-// Expand a String.replace-style replacement template for a single match.
-// Supports: $$, $&, $1-$9, $<name>, $`, $'. This is applied per-match so the
-// caller controls which matches get substituted (e.g. skipping zero-length
-// matches to stay consistent with the Matches panel).
-function expandTemplate(tpl: string, m: RegExpExecArray): string {
-  const named = (m.groups ?? {}) as Record<string, string>;
-  return tpl.replace(/\$(\$|&|`|'|\d+|<[^>]+>)/g, (whole, body: string) => {
-    switch (body) {
-      case '$':
-        return '$';
-      case '&':
-        return m[0];
-      case '`':
-        return m.input ? m.input.slice(0, m.index) : '';
-      case "'":
-        return m.input ? m.input.slice(m.index + m[0].length) : '';
-      default:
-        if (body[0] === '<') {
-          const name = body.slice(1, -1);
-          return name in named ? named[name] : whole;
-        }
-        const n = Number(body);
-        return n < m.length && m[n] !== undefined ? (m[n] as string) : '';
-    }
-  });
-}
-
 function Component() {
   const [pattern, setPattern] = useState('');
   const [flags, setFlags] = useState<Set<string>>(new Set(['g', 'i']));
@@ -91,7 +24,7 @@ function Component() {
   const flagStr = useMemo(() => [...flags].join(''), [flags]);
 
   const { html, matches, error } = useMemo(
-    () => highlight(text, pattern, flagStr),
+    () => highlightRegex(text, pattern, flagStr),
     [text, pattern, flagStr]
   );
 
@@ -101,30 +34,10 @@ function Component() {
   // zero-length matches so the replace count equals the highlighted count
   // (otherwise greedy patterns like (.*) would inject an extra substitution
   // for the trailing empty match). Empty replacement deletes matches.
-  const { output, replaceError } = useMemo(() => {
-    if (!pattern || !text) return { output: '', replaceError: null as string | null };
-    try {
-      const re = new RegExp(pattern, flagStr.includes('g') ? flagStr : flagStr + 'g');
-      let out = '';
-      let last = 0;
-      let m: RegExpExecArray | null;
-      let safety = 0;
-      while ((m = re.exec(text)) !== null) {
-        if (m[0].length === 0) {
-          re.lastIndex++;
-          continue;
-        }
-        out += text.slice(last, m.index);
-        out += expandTemplate(replacement, m);
-        last = m.index + m[0].length;
-        if (++safety > 5000) break;
-      }
-      out += text.slice(last);
-      return { output: out, replaceError: null };
-    } catch (e) {
-      return { output: '', replaceError: e instanceof Error ? e.message : String(e) };
-    }
-  }, [text, pattern, flagStr, replacement]);
+  const { output, error: replaceError } = useMemo(
+    () => replaceRegex(text, pattern, flagStr, replacement),
+    [text, pattern, flagStr, replacement]
+  );
 
   function toggleFlag(f: string) {
     setFlags((prev) => {
