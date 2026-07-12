@@ -25,7 +25,8 @@ vi.mock('electron', () => ({
 describe('parseConfig', () => {
   it('parseConfig-valid: parses a stored object merging over defaults', () => {
     expect(parseConfig('{"hotkey":"CmdOrCtrl+Shift+E"}')).toEqual({
-      hotkey: 'CmdOrCtrl+Shift+E'
+      hotkey: 'CmdOrCtrl+Shift+E',
+      historyHotkey: DEFAULT_CONFIG.historyHotkey
     });
   });
 
@@ -38,13 +39,18 @@ describe('parseConfig', () => {
   });
 
   it('parseConfig-partial: returns the parsed object (merge handled separately)', () => {
-    expect(parseConfig('{"hotkey":"X"}')).toEqual({ hotkey: 'X' });
+    expect(parseConfig('{"hotkey":"X"}')).toEqual({
+      hotkey: 'X',
+      historyHotkey: DEFAULT_CONFIG.historyHotkey
+    });
   });
 });
 
 describe('serialize/roundtrip', () => {
   it('serialize-roundtrip: serialize then parse returns the same config', () => {
-    expect(parseConfig(serializeConfig({ hotkey: 'A' }))).toEqual({ hotkey: 'A' });
+    expect(
+      parseConfig(serializeConfig({ hotkey: 'A', historyHotkey: DEFAULT_CONFIG.historyHotkey }))
+    ).toEqual({ hotkey: 'A', historyHotkey: DEFAULT_CONFIG.historyHotkey });
   });
 });
 
@@ -79,7 +85,10 @@ describe('validateAccelerator', () => {
 
 describe('mergeConfig', () => {
   it('merge: shallow-merges patch over base', () => {
-    expect(mergeConfig(DEFAULT_CONFIG, { hotkey: 'B' })).toEqual({ hotkey: 'B' });
+    expect(mergeConfig(DEFAULT_CONFIG, { hotkey: 'B' })).toEqual({
+      hotkey: 'B',
+      historyHotkey: DEFAULT_CONFIG.historyHotkey
+    });
   });
 });
 
@@ -87,7 +96,7 @@ describe('loadConfigFrom / saveConfigTo (roundtrip)', () => {
   it('load-save-roundtrip: writes then reads back the same config', () => {
     const path = join(tmpdir(), `devutils-config-${process.pid}-${Date.now()}.json`);
     try {
-      const cfg: AppConfig = { hotkey: 'Control+Shift+K' };
+      const cfg: AppConfig = { hotkey: 'Control+Shift+K', historyHotkey: DEFAULT_CONFIG.historyHotkey };
       saveConfigTo(path, cfg);
       const loaded = loadConfigFrom(path);
       expect(loaded).toEqual(cfg);

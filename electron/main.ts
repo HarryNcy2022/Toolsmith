@@ -106,14 +106,23 @@ ipcMain.handle('config:get', (_e, key?: string) => {
 });
 
 ipcMain.handle('config:set', (_e, key: string, value: unknown) => {
-  if (key !== 'hotkey') {
-    return { success: false, error: 'Unknown config key: ' + key };
+  if (key === 'hotkey') {
+    const v = validateAccelerator(String(value));
+    if (!v.valid) {
+      return { success: false, error: v.error };
+    }
+    return safeReRegisterHotkey(String(value));
   }
-  const v = validateAccelerator(String(value));
-  if (!v.valid) {
-    return { success: false, error: v.error };
+  if (key === 'historyHotkey') {
+    const v = validateAccelerator(String(value));
+    if (!v.valid) {
+      return { success: false, error: v.error };
+    }
+    const cfg = loadConfig();
+    saveConfig({ ...cfg, historyHotkey: String(value) });
+    return { success: true };
   }
-  return safeReRegisterHotkey(String(value));
+  return { success: false, error: 'Unknown config key: ' + key };
 });
 
 ipcMain.handle('app:read-clipboard', async () => {

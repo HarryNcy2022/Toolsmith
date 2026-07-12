@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { getTools, findTool } from './lib/registry';
 import { ToolList } from './components/ToolList';
 import { CommandPalette } from './components/CommandPalette';
 import { SettingsModal } from './components/SettingsModal';
+import { HistoryPanel } from './components/HistoryPanel';
 import { ActiveToolContext } from './lib/active-tool';
+import { parseAcceleratorToKeys, validateAccelerator } from './lib/accelerator';
+import type { KeyCombo } from './lib/accelerator';
+import { usePendingInput } from './lib/pending-input';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 
 // pull in all tool modules so they self-register on import
@@ -14,6 +18,10 @@ export function App() {
   const [activeId, setActiveId] = useState<string>(() => getTools()[0]?.id ?? '');
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [historyPanelOpen, setHistoryPanelOpen] = useState(false);
+
+  // Parsed history hotkey, read once at mount so the listener doesn't re-subscribe.
+  const historyComboRef = useRef<KeyCombo>(parseAcceleratorToKeys('CommandOrControl+Shift+H'));
 
   // keep active tool in URL hash so reload/back works
   useEffect(() => {
@@ -33,6 +41,34 @@ export function App() {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setPaletteOpen((v) => !v);
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // History hotkey (default CommandOrControl+Shift+H), independent of ⌘K.
+  useEffect(() => {
+    window.devutils
+      ?.getConfig('historyHotkey')
+      .then((raw) => {
+        if (typeof raw === 'string' && validateAccelerator(raw).valid) {
+          historyComboRef.current = parseAcceleratorToKeys(raw);
+        }
+      })
+      .catch(() => {});
+
+    function onKey(e: KeyboardEvent) {
+      const combo = historyComboRef.current;
+      const match =
+        (combo.ctrl ? e.ctrlKey || e.metaKey : true) &&
+        (combo.meta ? e.metaKey || e.ctrlKey : true) &&
+        (combo.alt ? e.altKey : true) &&
+        (combo.shift ? e.shiftKey : true) &&
+        e.key.toLowerCase() === combo.key.toLowerCase();
+      if (match) {
+        e.preventDefault();
+        setHistoryPanelOpen((v) => !v);
       }
     }
     window.addEventListener('keydown', onKey);
@@ -76,6 +112,14 @@ export function App() {
                   >
                     ⚙
                   </button>
+                  <button
+                    onClick={() => setHistoryPanelOpen(true)}
+                    className="px-2.5 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200 transition-colors"
+                    title="History (⌘⇧H)"
+                    aria-label="History"
+                  >
+                    🕘
+                  </button>
                   <span className="text-[10px] uppercase tracking-wider text-neutral-600">
                     {active!.category}
                   </span>
@@ -100,6 +144,12 @@ export function App() {
         onSelect={setActiveId}
       />
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <HistoryPanel
+        toolId={activeId}
+        open={historyPanelOpen}
+        onClose={() => setHistoryPanelOpen(false)}
+        onLoad={(text) => usePendingInput.getState().setPendingInput(activeId, text)}
+      />
     </>
   );
 }

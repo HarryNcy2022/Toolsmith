@@ -12,6 +12,7 @@ export interface HistoryState {
   entries: Record<string, HistoryEntry[]>;
   push: (toolId: string, input: string) => void;
   getAll: (toolId: string) => HistoryEntry[];
+  removeOne: (toolId: string, index: number) => void;
   clearAll: (toolId?: string) => void;
 }
 
@@ -34,7 +35,7 @@ function save(state: HistoryState): void {
 
 // Kept for callers that only have the entries map (e.g. clearAll).
 function saveEntries(entries: Record<string, HistoryEntry[]>): void {
-  save({ entries, push: () => {}, getAll: () => [], clearAll: () => {} });
+  save({ entries, push: () => {}, getAll: () => [], removeOne: () => {}, clearAll: () => {} });
 }
 
 export const useHistoryStore = create<HistoryState>((set, get) => ({
@@ -59,6 +60,18 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
 
   getAll(toolId: string) {
     return get().entries[toolId] ?? [];
+  },
+
+  removeOne(toolId: string, index: number) {
+    set((state) => {
+      const arr = state.entries[toolId];
+      if (!arr || index < 0 || index >= arr.length) return state;
+      const next = arr.filter((_, i) => i !== index);
+      const entries = { ...state.entries, [toolId]: next };
+      // persist after state update
+      setTimeout(() => save(get()), 0);
+      return { entries };
+    });
   },
 
   clearAll(toolId?: string) {

@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
-import { usePendingInput } from '../lib/pending-input';
+import { useMemo, useState } from 'react';
 import { useToolState } from '../lib/tool-state';
 import { IOPanel, PasteButton, ClearButton } from './IOPanel';
 import { registerTool } from '../lib/registry';
@@ -29,27 +28,13 @@ export function defineTransformTool(
   options: TransformOptions = {}
 ): void {
   function Component() {
-    const pending = usePendingInput.getState().consumePendingInput(meta.id);
     const [state, setState] = useToolState(
       meta.id,
       { input: '' },
-      pending !== null ? { input: pending } : options.initialInput ? { input: options.initialInput } : undefined
+      options.initialInput ? { input: options.initialInput } : undefined
     );
     const input = state.input;
     const setInput = (v: string) => setState({ input: v });
-
-    // G6: consume pending input even when component stays mounted (same-tool detect)
-    useEffect(() => {
-      const pending = usePendingInput.getState().consumePendingInput(meta.id);
-      if (pending !== null) setInput(pending);
-      const unsub = usePendingInput.subscribe((s, prev) => {
-        if (s.pending[meta.id] !== undefined && s.pending[meta.id] !== prev.pending[meta.id]) {
-          const val = usePendingInput.getState().consumePendingInput(meta.id);
-          if (val !== null) setInput(val);
-        }
-      });
-      return unsub;
-    }, []);
 
     const { output, error } = useMemo(() => {
       if (!input) return { output: '', error: null as string | null };

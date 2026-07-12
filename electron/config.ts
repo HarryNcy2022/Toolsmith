@@ -4,10 +4,12 @@ import { readFileSync, writeFileSync } from 'fs';
 
 export interface AppConfig {
   hotkey: string;
+  historyHotkey: string;
 }
 
 export const DEFAULT_CONFIG: AppConfig = {
-  hotkey: 'CommandOrControl+Shift+D'
+  hotkey: 'CommandOrControl+Shift+D',
+  historyHotkey: 'CommandOrControl+Shift+H'
 };
 
 const MODIFIERS = [

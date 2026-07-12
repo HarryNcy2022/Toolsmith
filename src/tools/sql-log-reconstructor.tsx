@@ -1,10 +1,9 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { sql } from '@codemirror/lang-sql';
 import { format as formatSQL, type SqlLanguage } from 'sql-formatter';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
-import { usePendingInput } from '../lib/pending-input';
 import { useToolState } from '../lib/tool-state';
 import {
   reconstructSqlLog,
@@ -19,7 +18,6 @@ const FORMATTER_DIALECTS: Record<SqlLiteralDialect, SqlLanguage> = {
 };
 
 function Component() {
-  const pending = usePendingInput.getState().consumePendingInput('sql-log-reconstructor');
   const [state, setState] = useToolState<{
     input: string;
     format: SqlLogFormat;
@@ -28,7 +26,7 @@ function Component() {
   }>(
     'sql-log-reconstructor',
     { input: '', format: 'auto', dialect: 'generic', beautify: true },
-    pending !== null ? { input: pending } : undefined
+    undefined
   );
   const input = state.input;
   const setInput = (v: string) => setState({ input: v });
@@ -38,20 +36,6 @@ function Component() {
   const setDialect = (v: SqlLiteralDialect) => setState({ dialect: v });
   const beautify = state.beautify;
   const setBeautify = (v: boolean) => setState({ beautify: v });
-
-  useEffect(() => {
-    const pending = usePendingInput.getState().consumePendingInput('sql-log-reconstructor');
-    if (pending !== null) setInput(pending);
-    return usePendingInput.subscribe((state, previous) => {
-      if (
-        state.pending['sql-log-reconstructor'] !== undefined &&
-        state.pending['sql-log-reconstructor'] !== previous.pending['sql-log-reconstructor']
-      ) {
-        const value = usePendingInput.getState().consumePendingInput('sql-log-reconstructor');
-        if (value !== null) setInput(value);
-      }
-    });
-  }, []);
 
   const result = useMemo(() => {
     if (!input.trim()) return { output: '', error: null, detected: '', bindCount: 0, warnings: [] as string[] };

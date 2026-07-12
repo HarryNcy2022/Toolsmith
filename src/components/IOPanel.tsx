@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CopyButton } from './CopyButton';
 import { CodeEditor } from './CodeEditor';
 import { useHistoryStore } from '../lib/history';
 import { useActiveToolId } from '../lib/active-tool';
+import { usePendingInput } from '../lib/pending-input';
 
 interface IOPanelProps {
   title: string;
@@ -29,36 +30,48 @@ export function IOPanel({
   toolId
 }: IOPanelProps) {
   const push = useHistoryStore((s) => s.push);
-  const getAll = useHistoryStore((s) => s.getAll);
   const contextToolId = useActiveToolId();
   const resolvedToolId = toolId || contextToolId;
-  const history = resolvedToolId ? getAll(resolvedToolId) : [];
-  const [showHistory, setShowHistory] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // push to history on change (debounced via last-value check)
+  // --- Input history recording (debounced) ---
+  const HISTORY_DEBOUNCE_MS = 4000;
   const lastPushed = useRef('');
-  useEffect(() => {
-    if (resolvedToolId && onChange && value && value !== lastPushed.current) {
-      lastPushed.current = value;
-      const tid = resolvedToolId;
-      // push on a delay so we don't record every keystroke
-      const timer = setTimeout(() => push(tid, value), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [value, resolvedToolId, onChange, push]);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // close dropdown on outside click
   useEffect(() => {
-    if (!showHistory) return;
-    function onClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setShowHistory(false);
-      }
-    }
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
-  }, [showHistory]);
+    // nothing to record
+    if (!resolvedToolId || !onChange || !value) return;
+    // already recorded this exact value
+    if (value === lastPushed.current) return;
+    lastPushed.current = value;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      push(resolvedToolId, value);
+      timerRef.current = null;
+    }, HISTORY_DEBOUNCE_MS);
+  }, [value, resolvedToolId, push]);
+
+  // flush pending debounced write on unmount (store push persists it)
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    []
+  );
+
+  // --- Pending input restore (consumed from the HistoryPanel click-to-load) ---
+  useEffect(() => {
+    if (!resolvedToolId || !onChange || readOnly) return;
+    const apply = () => {
+      const v = usePendingInput.getState().consumePendingInput(resolvedToolId);
+      if (v !== null) onChange(v);
+    };
+    apply();
+    const unsub = usePendingInput.subscribe((s, prev) => {
+      if (s.pending[resolvedToolId] !== prev.pending[resolvedToolId]) apply();
+    });
+    return () => unsub();
+  }, [resolvedToolId, onChange, readOnly]);
 
   return (
     <div className="flex flex-col min-h-0 flex-1 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden">
@@ -66,36 +79,6 @@ export function IOPanel({
         <span className="text-xs font-medium uppercase tracking-wide text-neutral-400">{title}</span>
         <div className="flex items-center gap-1.5">
           {actions}
-          {/* history dropdown — only for writable panels with toolId */}
-          {!readOnly && resolvedToolId && history.length > 0 && (
-            <div className="relative" ref={dropdownRef}>
-              <button
-                type="button"
-                onClick={() => setShowHistory((v) => !v)}
-                className="px-2 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200"
-                title="Input history"
-              >
-                History
-              </button>
-              {showHistory && (
-                <div className="absolute right-0 top-full mt-1 w-72 max-h-60 overflow-auto bg-neutral-900 border border-neutral-700 rounded-lg shadow-xl z-40">
-                  {history.map((entry, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => {
-                        onChange?.(entry.input);
-                        setShowHistory(false);
-                      }}
-                      className="w-full text-left px-3 py-2 text-xs font-mono text-neutral-300 hover:bg-neutral-800 border-b border-neutral-800/50 last:border-0 truncate"
-                    >
-                      {entry.input.slice(0, 80)}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
           <CopyButton getText={() => value} disabled={readOnly ? !value : false} />
         </div>
       </div>
