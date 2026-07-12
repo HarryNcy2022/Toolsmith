@@ -41,7 +41,7 @@ function Component() {
 
 function Generate() {
   const [state, setState] = useToolState<{ text: string; ecc: 'L' | 'M' | 'Q' | 'H'; size: number }>('qr-code-generate', {
-    text: 'https://example.com',
+    text: '',
     ecc: 'M',
     size: 240
   });
