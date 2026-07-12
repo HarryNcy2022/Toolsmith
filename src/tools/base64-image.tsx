@@ -19,7 +19,7 @@ function Component() {
   const setDataUrl = (v: string) => setState({ dataUrl: v });
   const mode = state.mode;
   const setMode = (v: 'preview' | 'raw' | 'data-url' | 'css') => setState({ mode: v });
-  const [preview, setPreview] = useState('');
+  const [preview, setPreview] = useState(dataUrl);
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
