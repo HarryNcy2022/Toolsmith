@@ -32,7 +32,3 @@ Open a per-tool input-history panel with these requirements:
    - (b) **Clear all**: a "Clear all" button at the top-right of the panel that clears every entry for the active tool (mirrors the existing Settings "Clear all input history", but scoped to the panel).
 
 The panel reads/writes the existing `devutils:history` store (`useHistoryStore`): `getAll(toolId)` for the list, `removeOne`/`clearAll(toolId)` for deletion. Note: `removeOne` does not exist yet and must be added before this item can be implemented.
-
-## Bug fixes
-
-- **Unix-time tool errors on empty input (default input).** The unix-time converter throws / shows an error when the input is empty (e.g. on first open with the now-empty default). Should treat empty input as "nothing to convert" (show a neutral placeholder) instead of an error state. Likely in `src/tools/unix-time.tsx` conversion path.
