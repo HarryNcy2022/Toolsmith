@@ -62,12 +62,13 @@ const PLACEHOLDERS: Record<string, string> = {
 type InputMode = 'epoch' | 'iso' | 'rfc';
 
 function Component() {
-  const [input, setInput] = useState<string>('');
   const [opt, setOpt] = useToolState('unix-time', {
+    input: '',
     inputMode: 'epoch' as InputMode,
     tz: LOCAL_TZ
   });
-  const { inputMode, tz } = opt;
+  const { input, inputMode, tz } = opt;
+  const setInput = (v: string) => setOpt({ input: v });
   const setInputMode = (v: InputMode) => setOpt({ inputMode: v });
   const setTz = (v: string) => setOpt({ tz: v });
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
@@ -81,6 +82,8 @@ function Component() {
   let d: dayjs.Dayjs | null;
   let valid = false;
   let errorMsg = '';
+
+  const empty = input.trim() === '';
 
   if (inputMode === 'epoch') {
     const sec = Number(input);
@@ -155,7 +158,9 @@ function Component() {
       <div className="px-1 text-xs text-neutral-600">Now: {now}</div>
 
       <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg px-4 py-2">
-        {!valid || !d ? (
+        {empty ? (
+          <div className="text-sm text-neutral-600 py-2">Enter a value to convert</div>
+        ) : !valid || !d ? (
           <div className="text-sm text-red-400 py-2">{errorMsg}</div>
         ) : (
           <>
