@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
+import { useToolState } from '../lib/tool-state';
 
 // Renderer is a browser context — no Buffer. Use TextEncoder/TextDecoder.
 function strToHex(s: string): string {
@@ -22,8 +23,11 @@ function hexToStr(hex: string): string {
 }
 
 function Component() {
-  const [input, setInput] = useState('');
-  const [dir, setDir] = useState<'text2hex' | 'hex2text'>('text2hex');
+  const [state, setState] = useToolState<{ input: string; dir: 'text2hex' | 'hex2text' }>('hex-ascii', { input: '', dir: 'text2hex' });
+  const input = state.input;
+  const setInput = (v: string) => setState({ input: v });
+  const dir = state.dir;
+  const setDir = (v: 'text2hex' | 'hex2text') => setState({ dir: v });
 
   const { output, error } = useMemo(() => {
     if (!input) return { output: '', error: null };

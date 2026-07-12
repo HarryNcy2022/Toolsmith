@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useToolState } from '../lib/tool-state';
 import { loremIpsum } from 'lorem-ipsum';
 import { registerTool } from '../lib/registry';
 import { CopyButton } from '../components/CopyButton';
@@ -52,9 +53,15 @@ function generateTweets(count: number): string {
 }
 
 function Component() {
-  const [type, setType] = useState<Type>('lorem');
-  const [unit, setUnit] = useState<Unit>('paragraphs');
-  const [count, setCount] = useState(3);
+  const [state, setState] = useToolState('lorem-ipsum', {
+    type: 'lorem' as Type,
+    unit: 'paragraphs' as Unit,
+    count: 3
+  });
+  const { type, unit, count } = state;
+  const setType = (v: Type) => setState({ type: v });
+  const setUnit = (v: Unit) => setState({ unit: v });
+  const setCount = (v: number) => setState({ count: v });
   const [output, setOutput] = useState('');
 
   function regen() {

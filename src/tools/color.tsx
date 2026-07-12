@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
+import { useToolState } from '../lib/tool-state';
 import { registerTool } from '../lib/registry';
 import { CopyButton } from '../components/CopyButton';
 import {
@@ -30,7 +31,9 @@ function EditableRow({ label, value, onChange, placeholder }: {
 type FieldKey = 'input' | EditableColorField;
 
 function Component() {
-  const [input, setInput] = useState('#3b82f6');
+  const [state, setState] = useToolState('color', { input: '' });
+  const input = state.input;
+  const setInput = (v: string) => setState({ input: v });
   const lastEditedField = useRef<FieldKey | null>(null);
 
   const results = useMemo(() => convertColor(input), [input]);

@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { registerTool } from '../lib/registry';
+import { useToolState } from '../lib/tool-state';
 import { CopyButton } from '../components/CopyButton';
 
 function parseAny(input: string, base: number): bigint | null {
@@ -53,9 +54,10 @@ function EditableRow({
 }
 
 function Component() {
-  const [input, setInput] = useState('');
-  const [base, setBase] = useState(10);
-  const [customBase, setCustomBase] = useState(16);
+  const [state, setState] = useToolState<{ input: string; base: number; customBase: number }>('number-base', { input: '', base: 10, customBase: 16 });
+  const input = state.input; const setInput = (v: string) => setState({ input: v });
+  const base = state.base; const setBase = (v: number) => setState({ base: v });
+  const customBase = state.customBase; const setCustomBase = (v: number) => setState({ customBase: v });
   const [editDrafts, setEditDrafts] = useState<Record<string, string>>({});
   const lastEdited = useRef<string | null>(null);
 

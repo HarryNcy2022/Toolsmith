@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   camelCase,
   capitalCase,
@@ -13,6 +13,7 @@ import {
 } from 'change-case';
 import { registerTool } from '../lib/registry';
 import { CopyButton } from '../components/CopyButton';
+import { useToolState } from '../lib/tool-state';
 
 const CASES: { label: string; fn: (s: string) => string }[] = [
   { label: 'camelCase', fn: (s) => camelCase(s) },
@@ -30,8 +31,11 @@ const CASES: { label: string; fn: (s: string) => string }[] = [
 ];
 
 function Component() {
-  const [input, setInput] = useState('');
-  const [lineByLine, setLineByLine] = useState(true);
+  const [state, setState] = useToolState<{ input: string; lineByLine: boolean }>('string-case', { input: '', lineByLine: true });
+  const input = state.input;
+  const setInput = (v: string) => setState({ input: v });
+  const lineByLine = state.lineByLine;
+  const setLineByLine = (v: boolean) => setState({ lineByLine: v });
 
   const results = useMemo(
     () =>

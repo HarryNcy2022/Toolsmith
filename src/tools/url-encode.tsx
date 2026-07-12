@@ -1,13 +1,20 @@
 import { useMemo, useState } from 'react';
+import { useToolState } from '../lib/tool-state';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { SwapButton } from '../components/SwapButton';
 import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 
 function Component() {
-  const [input, setInput] = useState('');
-  const [dir, setDir] = useState<'encode' | 'decode'>('encode');
-  const [component, setComponent] = useState<'full' | 'component'>('full');
+  const [state, setState] = useToolState<{ input: string; dir: 'encode' | 'decode'; component: 'full' | 'component' }>('url-encode', {
+    input: '',
+    dir: 'encode',
+    component: 'full'
+  });
+  const { input, dir, component } = state;
+  const setInput = (v: string) => setState({ input: v });
+  const setDir = (v: 'encode' | 'decode') => setState({ dir: v });
+  const setComponent = (v: 'full' | 'component') => setState({ component: v });
 
   const { output, error } = useMemo(() => {
     if (!input) return { output: '', error: null };
@@ -74,7 +81,7 @@ function Component() {
               <SwapButton
                 onClick={() => {
                   setInput(output);
-                  setDir((d) => (d === 'encode' ? 'decode' : 'encode'));
+                  setDir(dir === 'encode' ? 'decode' : 'encode');
                 }}
                 disabled={!output}
               />

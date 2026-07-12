@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
+import { useToolState } from '../lib/tool-state';
 
 type SortBy = 'az' | 'za' | 'length-asc' | 'length-desc' | 'natural' | 'numeric';
 
@@ -25,12 +26,15 @@ function process(input: string, sortBy: SortBy, opts: { dedupe: boolean; trim: b
 }
 
 function Component() {
-  const [input, setInput] = useState('');
-  const [sortBy, setSortBy] = useState<SortBy>('az');
-  const [dedupe, setDedupe] = useState(false);
-  const [trim, setTrim] = useState(false);
-  const [reverse, setReverse] = useState(false);
-  const [removeEmpty, setRemoveEmpty] = useState(false);
+  const [state, setState] = useToolState<{
+    input: string; sortBy: SortBy; dedupe: boolean; trim: boolean; reverse: boolean; removeEmpty: boolean;
+  }>('line-sort', { input: '', sortBy: 'az', dedupe: false, trim: false, reverse: false, removeEmpty: false });
+  const input = state.input; const setInput = (v: string) => setState({ input: v });
+  const sortBy = state.sortBy; const setSortBy = (v: SortBy) => setState({ sortBy: v });
+  const dedupe = state.dedupe; const setDedupe = (v: boolean) => setState({ dedupe: v });
+  const trim = state.trim; const setTrim = (v: boolean) => setState({ trim: v });
+  const reverse = state.reverse; const setReverse = (v: boolean) => setState({ reverse: v });
+  const removeEmpty = state.removeEmpty; const setRemoveEmpty = (v: boolean) => setState({ removeEmpty: v });
 
   const output = useMemo(() => {
     if (!input) return '';

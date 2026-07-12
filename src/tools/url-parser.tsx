@@ -2,9 +2,12 @@ import { useMemo, useState } from 'react';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { registerTool } from '../lib/registry';
 import { SplitPane } from '../components/SplitPane';
+import { useToolState } from '../lib/tool-state';
 
 function Component() {
-  const [input, setInput] = useState('');
+  const [state, setState] = useToolState<{ input: string }>('url-parser', { input: '' });
+  const input = state.input;
+  const setInput = (v: string) => setState({ input: v });
 
   const { output, error } = useMemo(() => {
     if (!input) return { output: '', error: null };

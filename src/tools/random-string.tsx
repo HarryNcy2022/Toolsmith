@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useToolState } from '../lib/tool-state';
 import { registerTool } from '../lib/registry';
 import { CopyButton } from '../components/CopyButton';
 import {
@@ -8,16 +9,28 @@ import {
 } from '../lib/random-string';
 
 function Component() {
-  const [preset, setPreset] = useState<RandomStringPreset>('alphanumeric');
-  const [custom, setCustom] = useState('');
-  const [length, setLength] = useState(32);
-  const [count, setCount] = useState(5);
+  const [state, setState] = useToolState('random-string', {
+    preset: 'alphanumeric' as RandomStringPreset,
+    custom: '',
+    length: 32,
+    count: 5,
+    advanced: false,
+    upperMin: 0,
+    lowerMin: 0,
+    digitMin: 0,
+    symMin: 0
+  });
+  const { preset, custom, length, count, advanced, upperMin, lowerMin, digitMin, symMin } = state;
+  const setPreset = (v: RandomStringPreset) => setState({ preset: v });
+  const setCustom = (v: string) => setState({ custom: v });
+  const setLength = (v: number) => setState({ length: v });
+  const setCount = (v: number) => setState({ count: v });
+  const setAdvanced = (v: boolean) => setState({ advanced: v });
+  const setUpperMin = (v: number) => setState({ upperMin: v });
+  const setLowerMin = (v: number) => setState({ lowerMin: v });
+  const setDigitMin = (v: number) => setState({ digitMin: v });
+  const setSymMin = (v: number) => setState({ symMin: v });
   const [results, setResults] = useState<string[]>([]);
-  const [advanced, setAdvanced] = useState(false);
-  const [upperMin, setUpperMin] = useState(0);
-  const [lowerMin, setLowerMin] = useState(0);
-  const [digitMin, setDigitMin] = useState(0);
-  const [symMin, setSymMin] = useState(0);
 
   function regen() {
     setResults(generateRandomStrings({

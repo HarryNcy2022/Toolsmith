@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
+import { useToolState } from '../lib/tool-state';
 
 // Escape control chars to backslash sequences; reverse for unescape.
 // Uses JSON.stringify trick on a single-quoted string to get a correct escape map,
@@ -39,8 +40,11 @@ function unescape(s: string): string {
 }
 
 function Component() {
-  const [input, setInput] = useState('');
-  const [dir, setDir] = useState<'escape' | 'unescape'>('escape');
+  const [state, setState] = useToolState<{ input: string; dir: 'escape' | 'unescape' }>('backslash-escape', { input: '', dir: 'escape' });
+  const input = state.input;
+  const setInput = (v: string) => setState({ input: v });
+  const dir = state.dir;
+  const setDir = (v: 'escape' | 'unescape') => setState({ dir: v });
 
   const { output, error } = useMemo(() => {
     if (!input) return { output: '', error: null };

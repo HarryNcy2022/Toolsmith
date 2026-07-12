@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useToolState } from '../lib/tool-state';
 import { registerTool } from '../lib/registry';
 import { SplitPane } from '../components/SplitPane';
 import { CopyButton } from '../components/CopyButton';
@@ -16,12 +17,18 @@ const FLAG_HELP: Record<string, string> = {
 };
 
 function Component() {
-  const [pattern, setPattern] = useState('');
-  const [flags, setFlags] = useState<Set<string>>(new Set(['g', 'i']));
-  const [text, setText] = useState('');
-  const [replacement, setReplacement] = useState('');
+  const [state, setState] = useToolState('regexp-tester', {
+    pattern: '',
+    flags: ['g', 'i'] as string[],
+    text: '',
+    replacement: ''
+  });
+  const { pattern, flags, text, replacement } = state;
+  const setPattern = (v: string) => setState({ pattern: v });
+  const setText = (v: string) => setState({ text: v });
+  const setReplacement = (v: string) => setState({ replacement: v });
 
-  const flagStr = useMemo(() => [...flags].join(''), [flags]);
+  const flagStr = useMemo(() => (flags as string[]).join(''), [flags]);
 
   const { html, matches, error } = useMemo(
     () => highlightRegex(text, pattern, flagStr),
@@ -40,11 +47,7 @@ function Component() {
   );
 
   function toggleFlag(f: string) {
-    setFlags((prev) => {
-      const next = new Set(prev);
-      next.has(f) ? next.delete(f) : next.add(f);
-      return next;
-    });
+    setState({ flags: flags.includes(f) ? flags.filter((x) => x !== f) : [...flags, f] });
   }
 
   return (
@@ -68,7 +71,7 @@ function Component() {
               title={FLAG_HELP[f]}
               onClick={() => toggleFlag(f)}
               className={`w-7 h-7 text-xs rounded border ${
-                flags.has(f)
+                flags.includes(f)
                   ? 'border-blue-500 bg-blue-600/20 text-blue-300'
                   : 'border-neutral-800 bg-neutral-900 text-neutral-500 hover:text-neutral-300'
               }`}

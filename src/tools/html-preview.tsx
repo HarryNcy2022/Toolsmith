@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useToolState } from '../lib/tool-state';
 import { registerTool } from '../lib/registry';
 import { html as htmlLang } from '@codemirror/lang-html';
 import { SplitPane } from '../components/SplitPane';
 import { CodeEditor } from '../components/CodeEditor';
 
 function Component() {
-  const [input, setInput] = useState(
-    '<div style="font-family:system-ui;padding:2rem;text-align:center">\n  <h1 style="color:#3b82f6">Hello</h1>\n  <p>Edit me on the left</p>\n</div>'
-  );
+  const [state, setState] = useToolState<{ input: string }>('html-preview', { input: '' });
+  const input = state.input;
+  const setInput = (v: string) => setState({ input: v });
 
   return (
     <SplitPane orientation="row" id="html-preview" className="h-full">

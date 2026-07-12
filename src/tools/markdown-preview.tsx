@@ -5,11 +5,14 @@ import { registerTool } from '../lib/registry';
 import { markdown as mdLang } from '@codemirror/lang-markdown';
 import { CodeEditor } from '../components/CodeEditor';
 import { SplitPane } from '../components/SplitPane';
+import { useToolState } from '../lib/tool-state';
 
 marked.setOptions({ gfm: true, breaks: false });
 
 function Component() {
-  const [input, setInput] = useState('');
+  const [state, setState] = useToolState<{ input: string }>('markdown-preview', { input: '' });
+  const input = state.input;
+  const setInput = (v: string) => setState({ input: v });
 
   const html = useMemo(() => {
     try {

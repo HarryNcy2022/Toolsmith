@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
+import { useToolState } from '../lib/tool-state';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -61,9 +62,14 @@ const PLACEHOLDERS: Record<string, string> = {
 type InputMode = 'epoch' | 'iso' | 'rfc';
 
 function Component() {
-  const [input, setInput] = useState<string>(String(Math.floor(Date.now() / 1000)));
-  const [inputMode, setInputMode] = useState<InputMode>('epoch');
-  const [tz, setTz] = useState(LOCAL_TZ);
+  const [input, setInput] = useState<string>('');
+  const [opt, setOpt] = useToolState('unix-time', {
+    inputMode: 'epoch' as InputMode,
+    tz: LOCAL_TZ
+  });
+  const { inputMode, tz } = opt;
+  const setInputMode = (v: InputMode) => setOpt({ inputMode: v });
+  const setTz = (v: string) => setOpt({ tz: v });
   const [now, setNow] = useState(Math.floor(Date.now() / 1000));
 
   useEffect(() => {

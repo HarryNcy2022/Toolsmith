@@ -3,11 +3,14 @@ import yaml from 'js-yaml';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
+import { useToolState } from '../lib/tool-state';
 import { json } from '@codemirror/lang-json';
 import { yaml as yamlLang } from '@codemirror/lang-yaml';
 
 function Component() {
-  const [input, setInput] = useState('');
+  const [state, setState] = useToolState<{ input: string }>('yaml-json', { input: '' });
+  const input = state.input;
+  const setInput = (v: string) => setState({ input: v });
   const [dir, setDir] = useState<'yaml2json' | 'json2yaml'>('yaml2json');
   const [indent, setIndent] = useState<2 | 4>(2);
 

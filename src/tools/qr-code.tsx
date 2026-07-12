@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useToolState } from '../lib/tool-state';
 import QRCode from 'qrcode';
 import jsQR from 'jsqr';
 import { registerTool } from '../lib/registry';
@@ -13,7 +14,9 @@ const ECC_LEVELS: { id: 'L' | 'M' | 'Q' | 'H'; label: string }[] = [
 ];
 
 function Component() {
-  const [tab, setTab] = useState<'generate' | 'read'>('generate');
+  const [state, setState] = useToolState<{ tab: 'generate' | 'read' }>('qr-code', { tab: 'generate' });
+  const tab = state.tab;
+  const setTab = (v: 'generate' | 'read') => setState({ tab: v });
 
   return (
     <div className="flex flex-col gap-3 h-full">
@@ -37,9 +40,15 @@ function Component() {
 }
 
 function Generate() {
-  const [text, setText] = useState('https://example.com');
-  const [ecc, setEcc] = useState<'L' | 'M' | 'Q' | 'H'>('M');
-  const [size, setSize] = useState(240);
+  const [state, setState] = useToolState<{ text: string; ecc: 'L' | 'M' | 'Q' | 'H'; size: number }>('qr-code-generate', {
+    text: 'https://example.com',
+    ecc: 'M',
+    size: 240
+  });
+  const { text, ecc, size } = state;
+  const setText = (v: string) => setState({ text: v });
+  const setEcc = (v: 'L' | 'M' | 'Q' | 'H') => setState({ ecc: v });
+  const setSize = (v: number) => setState({ size: v });
   const [dataUrl, setDataUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
 

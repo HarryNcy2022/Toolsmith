@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useToolState } from '../lib/tool-state';
 import { jwtDecode, JwtPayload } from 'jwt-decode';
 import HmacSHA256 from 'crypto-js/hmac-sha256';
 import HmacSHA384 from 'crypto-js/hmac-sha384';
@@ -108,8 +109,10 @@ function verifySignature(token: string, secret: string): VerifyState | null {
 }
 
 function Component() {
-  const [token, setToken] = useState('');
-  const [secret, setSecret] = useState('');
+  const [state, setState] = useToolState('jwt-debugger', { token: '', secret: '' });
+  const { token, secret } = state;
+  const setToken = (v: string) => setState({ token: v });
+  const setSecret = (v: string) => setState({ secret: v });
 
   const d = useMemo(() => decode(token), [token]);
   const expired = d?.exp ? new Date(d.exp).getTime() < Date.now() : false;

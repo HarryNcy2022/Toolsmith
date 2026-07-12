@@ -4,10 +4,14 @@ import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 import { html as htmlLang } from '@codemirror/lang-html';
+import { useToolState } from '../lib/tool-state';
 
 function Component() {
-  const [input, setInput] = useState('');
-  const [dir, setDir] = useState<'encode' | 'decode'>('encode');
+  const [state, setState] = useToolState<{ input: string; dir: 'encode' | 'decode' }>('html-entity', { input: '', dir: 'encode' });
+  const input = state.input;
+  const setInput = (v: string) => setState({ input: v });
+  const dir = state.dir;
+  const setDir = (v: 'encode' | 'decode') => setState({ dir: v });
 
   const { output, error } = useMemo(() => {
     if (!input) return { output: '', error: null };

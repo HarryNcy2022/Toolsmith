@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
+import { useToolState } from '../lib/tool-state';
 
 // curlconverter is heavy (bundles a WASM bash parser via tree-sitter, uses
 // top-level await). Lazy-load on first use so it lands in its own chunk and
@@ -42,8 +43,9 @@ const TARGETS: { id: string; label: string; fn: keyof CurlConverter }[] = [
 ];
 
 function Component() {
-  const [input, setInput] = useState('');
-  const [target, setTarget] = useState('javascript');
+  const [state, setState] = useToolState<{ input: string; target: string }>('curl-to-code', { input: '', target: 'javascript' });
+  const input = state.input; const setInput = (v: string) => setState({ input: v });
+  const target = state.target; const setTarget = (v: string) => setState({ target: v });
   const [out, setOut] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

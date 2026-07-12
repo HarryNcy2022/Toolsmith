@@ -1,14 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { html as htmlLang } from '@codemirror/lang-html';
 import { javascript as jsLang } from '@codemirror/lang-javascript';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { SplitPane } from '../components/SplitPane';
 import { htmlToJsx, jsxToHtml } from '../lib/html-jsx';
 import { registerTool } from '../lib/registry';
+import { useToolState } from '../lib/tool-state';
 
 function Component() {
-  const [input, setInput] = useState('');
-  const [direction, setDirection] = useState<'to-jsx' | 'to-html'>('to-jsx');
+  const [state, setState] = useToolState('html-to-jsx', { input: '', direction: 'to-jsx' as 'to-jsx' | 'to-html' });
+  const input = state.input;
+  const setInput = (v: string) => setState({ input: v });
+  const direction = state.direction;
+  const setDirection = (v: 'to-jsx' | 'to-html') => setState({ direction: v });
 
   const { output, error } = useMemo(() => {
     if (!input) return { output: '', error: null };

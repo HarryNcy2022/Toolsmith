@@ -1,14 +1,19 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { diffLines, diffWordsWithSpace, diffChars } from 'diff';
 import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
+import { useToolState } from '../lib/tool-state';
 
 type Granularity = 'line' | 'word' | 'char';
 
 function Component() {
-  const [left, setLeft] = useState('');
-  const [right, setRight] = useState('');
-  const [gran, setGran] = useState<Granularity>('line');
+  const [state, setState] = useToolState<{ left: string; right: string; gran: Granularity }>('text-diff', { left: '', right: '', gran: 'line' });
+  const left = state.left;
+  const setLeft = (v: string) => setState({ left: v });
+  const right = state.right;
+  const setRight = (v: string) => setState({ right: v });
+  const gran = state.gran;
+  const setGran = (v: Granularity) => setState({ gran: v });
 
   const parts = useMemo(() => {
     if (!left && !right) return [];

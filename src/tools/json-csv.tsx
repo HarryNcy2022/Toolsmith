@@ -3,6 +3,8 @@ import Papa from 'papaparse';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
+import { useToolState } from '../lib/tool-state';
+import { IndentOption } from '../components/BeautifyTool';
 import { json } from '@codemirror/lang-json';
 
 /**
@@ -50,10 +52,11 @@ function flattenRow(row: unknown): Record<string, string> {
 }
 
 function Component() {
-  const [input, setInput] = useState('');
-  const [dir, setDir] = useState<'json2csv' | 'csv2json'>('json2csv');
-  const [indent, setIndent] = useState<2 | 4 | 0>(2);
-  const [flattenNested, setFlattenNested] = useState(false);
+  const [state, setState] = useToolState<{ input: string; dir: 'json2csv' | 'csv2json'; indent: IndentOption; flattenNested: boolean }>('json-csv', { input: '', dir: 'json2csv', indent: 2, flattenNested: false });
+  const input = state.input; const setInput = (v: string) => setState({ input: v });
+  const dir = state.dir; const setDir = (v: 'json2csv' | 'csv2json') => setState({ dir: v });
+  const indent = state.indent; const setIndent = (v: IndentOption) => setState({ indent: v });
+  const flattenNested = state.flattenNested; const setFlattenNested = (v: boolean) => setState({ flattenNested: v });
 
   const { output, error } = useMemo(() => {
     if (!input) return { output: '', error: null };

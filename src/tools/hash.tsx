@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import CryptoJS from 'crypto-js';
 import { registerTool } from '../lib/registry';
 import { CopyButton } from '../components/CopyButton';
+import { useToolState } from '../lib/tool-state';
 
 const ALGOS = ['MD5', 'SHA1', 'SHA224', 'SHA256', 'SHA384', 'SHA512', 'SHA3', 'RIPEMD160'] as const;
 type Algo = (typeof ALGOS)[number];
@@ -28,7 +29,9 @@ function hash(input: string, algo: Algo): string {
 }
 
 function Component() {
-  const [input, setInput] = useState('');
+  const [state, setState] = useToolState<{ input: string }>('hash', { input: '' });
+  const input = state.input;
+  const setInput = (v: string) => setState({ input: v });
 
   const results = useMemo(
     () => ALGOS.map((a) => ({ algo: a, out: input ? hash(input, a) : '' })),

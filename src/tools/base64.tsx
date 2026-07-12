@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useToolState } from '../lib/tool-state';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { SwapButton } from '../components/SwapButton';
 import { SplitPane } from '../components/SplitPane';
@@ -21,8 +22,13 @@ const dec = (s: string) => {
 };
 
 function Component() {
-  const [input, setInput] = useState('');
-  const [dir, setDir] = useState<'encode' | 'decode'>('encode');
+  const [state, setState] = useToolState<{ input: string; dir: 'encode' | 'decode' }>('base64', {
+    input: '',
+    dir: 'encode'
+  });
+  const { input, dir } = state;
+  const setInput = (v: string) => setState({ input: v });
+  const setDir = (v: 'encode' | 'decode') => setState({ dir: v });
 
   const { output, error } = useMemo(() => {
     if (!input) return { output: '', error: null };
@@ -60,7 +66,7 @@ function Component() {
               <SwapButton
                 onClick={() => {
                   setInput(output);
-                  setDir((d) => (d === 'encode' ? 'decode' : 'encode'));
+                  setDir(dir === 'encode' ? 'decode' : 'encode');
                 }}
                 disabled={!output}
               />

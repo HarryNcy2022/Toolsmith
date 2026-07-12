@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useToolState } from '../lib/tool-state';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
@@ -87,11 +88,19 @@ function minify(
 }
 
 function Component() {
-  const [input, setInput] = useState('');
-  const [indent, setIndent] = useState<Indent>(2);
-  const [mode, setMode] = useState<'prettify' | 'minify'>('prettify');
-  const [sortKeysOn, setSortKeysOn] = useState(false);
-  const [autoRepairOn, setAutoRepairOn] = useState(false);
+  const [state, setState] = useToolState<{ input: string; indent: Indent; mode: 'prettify' | 'minify'; sortKeysOn: boolean; autoRepairOn: boolean }>('json-formatter', {
+    input: '',
+    indent: 2,
+    mode: 'prettify',
+    sortKeysOn: false,
+    autoRepairOn: false
+  });
+  const { input, indent, mode, sortKeysOn, autoRepairOn } = state;
+  const setInput = (v: string) => setState({ input: v });
+  const setIndent = (v: Indent) => setState({ indent: v });
+  const setMode = (v: 'prettify' | 'minify') => setState({ mode: v });
+  const setSortKeysOn = (v: boolean) => setState({ sortKeysOn: v });
+  const setAutoRepairOn = (v: boolean) => setState({ autoRepairOn: v });
 
   const { output, error } = useMemo(() => {
     if (!input) return { output: '', error: null };

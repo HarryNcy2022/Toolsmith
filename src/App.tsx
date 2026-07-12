@@ -3,6 +3,7 @@ import { Sidebar } from './components/Sidebar';
 import { getTools, findTool } from './lib/registry';
 import { ToolList } from './components/ToolList';
 import { CommandPalette } from './components/CommandPalette';
+import { SettingsModal } from './components/SettingsModal';
 import { ActiveToolContext } from './lib/active-tool';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 
@@ -12,6 +13,7 @@ import './tools/index';
 export function App() {
   const [activeId, setActiveId] = useState<string>(() => getTools()[0]?.id ?? '');
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // keep active tool in URL hash so reload/back works
   useEffect(() => {
@@ -66,6 +68,14 @@ export function App() {
                   >
                     ⌘K
                   </button>
+                  <button
+                    onClick={() => setSettingsOpen(true)}
+                    className="px-2.5 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200 transition-colors"
+                    title="Settings"
+                    aria-label="Settings"
+                  >
+                    ⚙
+                  </button>
                   <span className="text-[10px] uppercase tracking-wider text-neutral-600">
                     {active!.category}
                   </span>
@@ -89,6 +99,7 @@ export function App() {
         onClose={() => setPaletteOpen(false)}
         onSelect={setActiveId}
       />
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { usePendingInput } from '../lib/pending-input';
+import { useToolState } from '../lib/tool-state';
 import { IOPanel, PasteButton, ClearButton } from './IOPanel';
 import { registerTool } from '../lib/registry';
 import type { ToolMeta } from '../types';
@@ -40,24 +41,34 @@ export function defineBeautifyTool(
   options: BeautifyOptions = {}
 ): void {
   function Component() {
-    const [input, setInput] = useState(() => {
-      const pending = usePendingInput.getState().consumePendingInput(meta.id);
-      return pending ?? '';
-    });
+    const pending = usePendingInput.getState().consumePendingInput(meta.id);
+    const [state, setState] = useToolState(
+      meta.id,
+      {
+        input: '',
+        mode: 'beautify' as 'beautify' | 'minify',
+        indent: 2 as IndentOption
+      },
+      pending !== null ? { input: pending } : undefined
+    );
+    const { input, mode, indent } = state;
+    const setInput = (v: string) => setState({ input: v });
+    const setMode = (v: 'beautify' | 'minify') => setState({ mode: v });
+    const setIndent = (v: IndentOption) => setState({ indent: v });
+
     // G6: consume pending input even when component stays mounted (same-tool detect)
     useEffect(() => {
       const pending = usePendingInput.getState().consumePendingInput(meta.id);
       if (pending !== null) setInput(pending);
-      const unsub = usePendingInput.subscribe((state, prev) => {
-        if (state.pending[meta.id] !== undefined && state.pending[meta.id] !== prev.pending[meta.id]) {
+      const unsub = usePendingInput.subscribe((s, prev) => {
+        if (s.pending[meta.id] !== undefined && s.pending[meta.id] !== prev.pending[meta.id]) {
           const val = usePendingInput.getState().consumePendingInput(meta.id);
           if (val !== null) setInput(val);
         }
       });
       return unsub;
     }, []);
-    const [mode, setMode] = useState<'beautify' | 'minify'>('beautify');
-    const [indent, setIndent] = useState<IndentOption>(2);
+
     const [output, setOutput] = useState('');
     const [error, setError] = useState<string | null>(null);
 

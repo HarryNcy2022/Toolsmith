@@ -3,6 +3,7 @@ import { format as fmtSQL, type SqlLanguage } from 'sql-formatter';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
+import { useToolState } from '../lib/tool-state';
 import { sql } from '@codemirror/lang-sql';
 
 const DIALECTS: SqlLanguage[] = ['sql', 'mysql', 'postgresql', 'sqlite', 'mariadb', 'bigquery', 'tsql'];
@@ -21,12 +22,16 @@ function minifySQL(input: string): string {
 }
 
 function Component() {
-  const [input, setInput] = useState('');
-  const [dialect, setDialect] = useState<SqlLanguage>('sql');
-  const [mode, setMode] = useState<'beautify' | 'minify'>('beautify');
-  const [indent, setIndent] = useState<IndentOption>(2);
-  const [keywordCase, setKeywordCase] = useState<CaseOption>('upper');
-  const [identifierCase, setIdentifierCase] = useState<CaseOption>('preserve');
+  const [state, setState] = useToolState<{
+    input: string; dialect: SqlLanguage; mode: 'beautify' | 'minify'; indent: IndentOption;
+    keywordCase: CaseOption; identifierCase: CaseOption;
+  }>('sql-format', { input: '', dialect: 'sql', mode: 'beautify', indent: 2, keywordCase: 'upper', identifierCase: 'preserve' });
+  const input = state.input; const setInput = (v: string) => setState({ input: v });
+  const dialect = state.dialect; const setDialect = (v: SqlLanguage) => setState({ dialect: v });
+  const mode = state.mode; const setMode = (v: 'beautify' | 'minify') => setState({ mode: v });
+  const indent = state.indent; const setIndent = (v: IndentOption) => setState({ indent: v });
+  const keywordCase = state.keywordCase; const setKeywordCase = (v: CaseOption) => setState({ keywordCase: v });
+  const identifierCase = state.identifierCase; const setIdentifierCase = (v: CaseOption) => setState({ identifierCase: v });
 
   const { output, error } = useMemo(() => {
     if (!input) return { output: '', error: null };

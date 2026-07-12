@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 import { CopyButton } from '../components/CopyButton';
+import { useToolState } from '../lib/tool-state';
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -13,11 +14,14 @@ function fileToDataUrl(file: File): Promise<string> {
 }
 
 function Component() {
-  const [dataUrl, setDataUrl] = useState('');
+  const [state, setState] = useToolState<{ dataUrl: string; mode: 'preview' | 'raw' | 'data-url' | 'css' }>('base64-image', { dataUrl: '', mode: 'preview' });
+  const dataUrl = state.dataUrl;
+  const setDataUrl = (v: string) => setState({ dataUrl: v });
+  const mode = state.mode;
+  const setMode = (v: 'preview' | 'raw' | 'data-url' | 'css') => setState({ mode: v });
   const [preview, setPreview] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
-  const [mode, setMode] = useState<'preview' | 'raw' | 'data-url' | 'css'>('preview');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function getFormattedOutput(): string {

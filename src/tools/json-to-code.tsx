@@ -3,6 +3,7 @@ import { quicktype, jsonInputForTargetLanguage, InputData } from 'quicktype-core
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
+import { useToolState } from '../lib/tool-state';
 
 const TARGETS = [
   'typescript',
@@ -50,10 +51,11 @@ async function convert(jsonStr: string, lang: string, topName: string, options: 
 }
 
 function Component() {
-  const [input, setInput] = useState('');
-  const [target, setTarget] = useState<string>('typescript');
-  const [topName, setTopName] = useState('Root');
-  const [options, setOptions] = useState<Record<string, boolean>>({});
+  const [state, setState] = useToolState<{ input: string; target: string; topName: string; options: Record<string, boolean> }>('json-to-code', { input: '', target: 'typescript', topName: 'Root', options: {} });
+  const input = state.input; const setInput = (v: string) => setState({ input: v });
+  const target = state.target; const setTarget = (v: string) => setState({ target: v });
+  const topName = state.topName; const setTopName = (v: string) => setState({ topName: v });
+  const options = state.options; const setOptions = (v: Record<string, boolean>) => setState({ options: v });
   const [out, setOut] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -114,7 +116,7 @@ function Component() {
                 <input
                   type="checkbox"
                   checked={!!options[opt.key]}
-                  onChange={(e) => setOptions((o) => ({ ...o, [opt.key]: e.target.checked }))}
+                  onChange={(e) => setOptions({ ...options, [opt.key]: e.target.checked })}
                   className="rounded border-neutral-700 bg-neutral-900"
                 />
                 {opt.label}

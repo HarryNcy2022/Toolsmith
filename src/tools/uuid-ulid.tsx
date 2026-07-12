@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ulid } from 'ulid';
 import { uuidv7 } from 'uuidv7';
 import { registerTool } from '../lib/registry';
+import { useToolState } from '../lib/tool-state';
 import { CopyButton } from '../components/CopyButton';
 
 type Kind = 'uuid-v4' | 'uuid-v7' | 'ulid';
@@ -30,10 +31,11 @@ function decodeUlid(id: string): { time: string } | { error: string } {
 }
 
 function Component() {
-  const [kind, setKind] = useState<Kind>('uuid-v4');
-  const [count, setCount] = useState(1);
-  const [uppercase, setUppercase] = useState(false);
-  const [hyphens, setHyphens] = useState(true);
+  const [state, setState] = useToolState<{ kind: Kind; count: number; uppercase: boolean; hyphens: boolean }>('uuid-ulid', { kind: 'uuid-v4', count: 1, uppercase: false, hyphens: true });
+  const kind = state.kind; const setKind = (v: Kind) => setState({ kind: v });
+  const count = state.count; const setCount = (v: number) => setState({ count: v });
+  const uppercase = state.uppercase; const setUppercase = (v: boolean) => setState({ uppercase: v });
+  const hyphens = state.hyphens; const setHyphens = (v: boolean) => setState({ hyphens: v });
   const [ids, setIds] = useState<string[]>(() => [crypto.randomUUID()]);
 
   function regen() {

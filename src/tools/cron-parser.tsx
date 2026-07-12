@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import cronParser from 'cron-parser';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 import { CopyButton } from '../components/CopyButton';
+import { useToolState } from '../lib/tool-state';
 
 const SAMPLES = [
   { label: 'Every minute', value: '* * * * *' },
@@ -52,7 +53,9 @@ function describe(expr: string): {
 }
 
 function Component() {
-  const [input, setInput] = useState('*/5 * * * *');
+  const [state, setState] = useToolState<{ input: string }>('cron-parser', { input: '' });
+  const input = state.input;
+  const setInput = (v: string) => setState({ input: v });
 
   const result = useMemo(() => (input.trim() ? describe(input.trim()) : null), [input]);
 

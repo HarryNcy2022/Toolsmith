@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { sql } from '@codemirror/lang-sql';
 import { format as formatSQL, type SqlLanguage } from 'sql-formatter';
 import { IOPanel, PasteButton, ClearButton } from '../components/IOPanel';
 import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 import { usePendingInput } from '../lib/pending-input';
+import { useToolState } from '../lib/tool-state';
 import {
   reconstructSqlLog,
   type SqlLiteralDialect,
@@ -18,12 +19,25 @@ const FORMATTER_DIALECTS: Record<SqlLiteralDialect, SqlLanguage> = {
 };
 
 function Component() {
-  const [input, setInput] = useState(() => (
-    usePendingInput.getState().consumePendingInput('sql-log-reconstructor') ?? ''
-  ));
-  const [format, setFormat] = useState<SqlLogFormat>('auto');
-  const [dialect, setDialect] = useState<SqlLiteralDialect>('generic');
-  const [beautify, setBeautify] = useState(true);
+  const pending = usePendingInput.getState().consumePendingInput('sql-log-reconstructor');
+  const [state, setState] = useToolState<{
+    input: string;
+    format: SqlLogFormat;
+    dialect: SqlLiteralDialect;
+    beautify: boolean;
+  }>(
+    'sql-log-reconstructor',
+    { input: '', format: 'auto', dialect: 'generic', beautify: true },
+    pending !== null ? { input: pending } : undefined
+  );
+  const input = state.input;
+  const setInput = (v: string) => setState({ input: v });
+  const format = state.format;
+  const setFormat = (v: SqlLogFormat) => setState({ format: v });
+  const dialect = state.dialect;
+  const setDialect = (v: SqlLiteralDialect) => setState({ dialect: v });
+  const beautify = state.beautify;
+  const setBeautify = (v: boolean) => setState({ beautify: v });
 
   useEffect(() => {
     const pending = usePendingInput.getState().consumePendingInput('sql-log-reconstructor');
