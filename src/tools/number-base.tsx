@@ -134,6 +134,7 @@ function Component() {
       <div className="flex items-center gap-3">
         <label className="text-xs uppercase tracking-wide text-neutral-500">Input</label>
         <input
+          data-toolsmith-focus-input
           value={input}
           onChange={(e) => handleInputChange(e.target.value)}
           className="flex-1 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded text-sm font-mono text-neutral-200 focus:outline-none focus:border-neutral-600"

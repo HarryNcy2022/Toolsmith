@@ -111,6 +111,7 @@ function Component() {
       <div className="flex items-center gap-3">
         <label className="text-xs uppercase tracking-wide text-neutral-500">Input</label>
         <input
+          data-toolsmith-focus-input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           inputMode={inputMode === 'epoch' ? 'numeric' : 'text'}

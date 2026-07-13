@@ -5,6 +5,7 @@ Only active or explicitly deferred work belongs here. Completed-item history liv
 | Improvement | Status | Value | Scope |
 |-------------|--------|-------|-------|
 | Tool pins | Proposed | Medium | Let users pin frequently-used tools; pinned tools surface first when searching/filtering the palette. |
+| Recent tools | Proposed | Medium | Rank recently-used tools first when searching/filtering the command palette. |
 | Configurable palette hotkey | Proposed | Medium | Rename the ⌘K / Ctrl+K command-palette shortcut to a generic "menu" action and make that hotkey user-configurable, like the global show/hide hotkey. |
 | Clear preserved state | Proposed | Medium | Add a "Clear preserved state" action in Settings that wipes the per-tool preserved input+options store (`devutils:tool-state`), alongside the existing clear-history. |
 | Opt out of state preservation | Proposed | Low | Preference to disable tool-state preservation globally (or per tool) so tools start empty and never persist input/options. |

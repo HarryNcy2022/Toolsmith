@@ -41,6 +41,12 @@ export function CodeEditor({
     if (extensions) base.push(...extensions);
     return base;
   }, [extensions]);
+  const editorClassName = [
+    className,
+    !readOnly && onChange ? 'toolsmith-input-editor' : undefined
+  ]
+    .filter(Boolean)
+    .join(' ') || undefined;
 
   return (
     <CodeMirror
@@ -51,7 +57,7 @@ export function CodeEditor({
       theme={darkTheme}
       extensions={exts}
       height="100%"
-      className={className}
+      className={editorClassName}
       basicSetup={{
         lineNumbers: true,
         highlightActiveLine: !readOnly,

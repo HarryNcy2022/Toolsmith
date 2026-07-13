@@ -80,6 +80,7 @@ function Component() {
         <label className="flex items-center gap-1.5 text-xs text-neutral-400">
           Count
           <input
+            data-toolsmith-focus-input
             type="number"
             min={1}
             max={100}

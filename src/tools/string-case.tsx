@@ -49,6 +49,7 @@ function Component() {
   return (
     <div className="flex flex-col gap-3 h-full">
       <textarea
+        data-toolsmith-focus-input
         value={input}
         onChange={(e) => setInput(e.target.value)}
         placeholder="Enter some text…"

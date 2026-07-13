@@ -74,6 +74,7 @@ function Component() {
           className="w-10 h-10 rounded border border-neutral-800 bg-transparent cursor-pointer"
         />
         <input
+          data-toolsmith-focus-input
           value={input}
           onChange={(e) => handleTextChange(e.target.value)}
           placeholder="#3b82f6 / rgb(59,130,246) / blue"
@@ -88,7 +89,9 @@ function Component() {
       </div>
 
       <div className="bg-neutral-900/50 border border-neutral-800 rounded-lg px-4 py-2">
-        {!results ? (
+        {!input.trim() ? (
+          <div className="text-sm text-neutral-600 py-2">Enter a value to convert</div>
+        ) : !results ? (
           <div className="text-sm text-red-400 py-2">Invalid color</div>
         ) : (
           <>

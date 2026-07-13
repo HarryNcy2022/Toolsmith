@@ -91,6 +91,7 @@ function Generate() {
         <label className="flex flex-col gap-1 text-xs text-neutral-400">
           Text / URL
           <textarea
+            data-toolsmith-focus-input
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="https://example.com"

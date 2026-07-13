@@ -87,6 +87,7 @@ function Component() {
         <label className="flex flex-col gap-1 text-xs text-neutral-400">
           Length
           <input
+            data-toolsmith-focus-input
             type="number"
             min={1}
             max={4096}

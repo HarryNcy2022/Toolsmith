@@ -128,6 +128,7 @@ function Component() {
             }`}
           >
             <textarea
+              data-toolsmith-focus-input
               value={dataUrl}
               onChange={(e) => {
                 setDataUrl(e.target.value);

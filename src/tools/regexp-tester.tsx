@@ -56,6 +56,7 @@ function Component() {
         <div className="flex items-center gap-1 bg-neutral-900 border border-neutral-800 rounded px-2">
           <span className="text-neutral-600 text-sm">/</span>
           <input
+            data-toolsmith-focus-input
             value={pattern}
             onChange={(e) => setPattern(e.target.value)}
             placeholder="pattern"

@@ -56,6 +56,7 @@ function Component() {
 
       <SplitPane orientation="row" id="text-diff">
         <textarea
+          data-toolsmith-focus-input
           value={left}
           onChange={(e) => setLeft(e.target.value)}
           placeholder="Original"

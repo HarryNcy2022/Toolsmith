@@ -19,6 +19,8 @@ export function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [historyPanelOpen, setHistoryPanelOpen] = useState(false);
+  const [focusInputRequest, setFocusInputRequest] = useState(0);
+  const mainRef = useRef<HTMLElement>(null);
 
   // Parsed history hotkey, read once at mount so the listener doesn't re-subscribe.
   const historyComboRef = useRef<KeyCombo>(parseAcceleratorToKeys('CommandOrControl+Shift+H'));
@@ -34,6 +36,19 @@ export function App() {
   useEffect(() => {
     if (activeId) window.location.hash = `/${activeId}`;
   }, [activeId]);
+
+  // Focus first editable tool input after command-palette selection or focus command.
+  useEffect(() => {
+    if (!focusInputRequest) return;
+    const frame = requestAnimationFrame(() => {
+      const input = mainRef.current
+        ?.querySelector<HTMLElement>(
+          '.toolsmith-input-editor .cm-content[contenteditable="true"], [data-toolsmith-focus-input]'
+        );
+      (input ?? mainRef.current)?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [focusInputRequest]);
 
   // ⌘K / Ctrl+K to open command palette
   useEffect(() => {
@@ -78,6 +93,15 @@ export function App() {
   const active = findTool(activeId);
   const ActiveComponent = active?.component;
 
+  function focusInput() {
+    setFocusInputRequest((request) => request + 1);
+  }
+
+  function handlePaletteSelect(id: string) {
+    setActiveId(id);
+    focusInput();
+  }
+
   return (
     <><Group
       id="app-shell"
@@ -91,7 +115,7 @@ export function App() {
         <div className="w-0.5 h-8 rounded-full bg-neutral-600 opacity-0 group-hover:opacity-100 transition-opacity" />
       </Separator>
       <Panel id="main-panel">
-        <main className="flex-1 min-w-0 flex flex-col h-full">
+        <main ref={mainRef} tabIndex={-1} className="flex-1 min-w-0 flex flex-col h-full">
           {ActiveComponent ? (
             <>
               <header className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-800 bg-neutral-950">
@@ -141,7 +165,8 @@ export function App() {
       <CommandPalette
         open={paletteOpen}
         onClose={() => setPaletteOpen(false)}
-        onSelect={setActiveId}
+        onSelect={handlePaletteSelect}
+        onFocusInput={focusInput}
       />
       <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <HistoryPanel

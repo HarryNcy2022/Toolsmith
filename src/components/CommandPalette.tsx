@@ -8,6 +8,7 @@ interface CommandPaletteProps {
   open: boolean;
   onClose: () => void;
   onSelect: (id: string) => void;
+  onFocusInput: () => void;
 }
 
 interface ToolRowProps {
@@ -40,15 +41,50 @@ function ToolRow({ tool, selected, onSelect, badge }: ToolRowProps) {
   );
 }
 
-export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps) {
+interface PaletteCommand {
+  id: string;
+  label: string;
+  keywords: string[];
+}
+
+const PALETTE_COMMANDS: PaletteCommand[] = [
+  { id: 'focus', label: 'Focus current input', keywords: ['focus', 'input', 'refocus'] }
+];
+
+interface CommandRowProps {
+  command: PaletteCommand;
+  selected: boolean;
+  onSelect: () => void;
+}
+
+function CommandRow({ command, selected, onSelect }: CommandRowProps) {
+  return (
+    <button
+      onClick={onSelect}
+      className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors ${
+        selected ? 'bg-blue-600/20 text-blue-300' : 'text-neutral-300 hover:bg-neutral-800'
+      }`}
+    >
+      <span className="text-xs uppercase tracking-wide text-neutral-600 w-20 shrink-0">Command</span>
+      <span className="text-sm flex-1">{command.label}</span>
+      <span className="px-1.5 py-0.5 text-[10px] rounded bg-neutral-800 text-neutral-400 border border-neutral-700">
+        /{command.id}
+      </span>
+    </button>
+  );
+}
+
+export function CommandPalette({ open, onClose, onSelect, onFocusInput }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [idx, setIdx] = useState(0);
   const [detectedContentType, setDetectedContentType] = useState<DetectedContentType | null>(null);
   const [clipboardText, setClipboardText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const tools = useMemo(() => getTools(), []);
+  const commandMode = query.trim().startsWith('/');
 
   const filtered = useMemo(() => {
+    if (commandMode) return [];
     if (!query.trim()) return tools;
     const q = query.trim().toLowerCase();
     return tools.filter(
@@ -57,7 +93,18 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
         t.category.toLowerCase().includes(q) ||
         t.keywords?.some((k) => k.includes(q))
     );
-  }, [query, tools]);
+  }, [commandMode, query, tools]);
+
+  const commandQuery = commandMode ? query.trim().slice(1).trim().toLowerCase() : '';
+  const commandResults = useMemo(() => {
+    if (!commandMode) return [];
+    if (!commandQuery) return PALETTE_COMMANDS;
+    return PALETTE_COMMANDS.filter(
+      (command) =>
+        command.label.toLowerCase().includes(commandQuery) ||
+        command.keywords.some((keyword) => keyword.includes(commandQuery))
+    );
+  }, [commandMode, commandQuery]);
 
   // Build clipboard detection section using content-type classifier
   const detectSection: { type: string; recommended: Tool[] } | null = useMemo(() => {
@@ -76,10 +123,10 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
     return { type: info.label, recommended };
   }, [query, detectedContentType, clipboardText]);
 
-  // reset index when detect or filter changes
+  // reset index when command, detect, or tool results change
   useEffect(() => {
     setIdx(0);
-  }, [detectSection, filtered]);
+  }, [commandResults, detectSection, filtered]);
 
   // focus input + read clipboard on open
   useEffect(() => {
@@ -126,8 +173,15 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
   }
 
   const hasDetectRow = detectSection !== null;
-  const detectRowOffset = hasDetectRow ? detectSection!.recommended.length : 0;
-  const totalCount = filtered.length + detectRowOffset;
+  const commandCount = commandMode ? commandResults.length : 0;
+  const recommendedCount = hasDetectRow ? detectSection!.recommended.length : 0;
+  const filteredRowOffset = commandCount + recommendedCount;
+  const totalCount = (commandMode ? 0 : filtered.length) + filteredRowOffset;
+
+  function handleCommand(command: PaletteCommand) {
+    if (command.id === 'focus') onFocusInput();
+    onClose();
+  }
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
@@ -141,10 +195,12 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
         break;
       case 'Enter':
         e.preventDefault();
-        if (hasDetectRow && idx < detectRowOffset) {
-          handleSelectDetect(detectSection!.recommended[idx].id);
+        if (commandMode && idx < commandCount) {
+          handleCommand(commandResults[idx]);
+        } else if (hasDetectRow && idx >= commandCount && idx < filteredRowOffset) {
+          handleSelectDetect(detectSection!.recommended[idx - commandCount].id);
         } else {
-          const itemIdx = idx - detectRowOffset;
+          const itemIdx = idx - filteredRowOffset;
           const item = filtered[itemIdx];
           if (item) handleSelectTool(item.id);
         }
@@ -173,11 +229,20 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Search tools… (⌘K)"
+            placeholder="Search tools… or type / for commands"
             className="flex-1 py-3 bg-transparent text-sm text-neutral-200 placeholder-neutral-500 focus:outline-none"
           />
         </div>
         <div className="max-h-80 overflow-auto py-1">
+          {commandMode &&
+            commandResults.map((command, i) => (
+              <CommandRow
+                key={command.id}
+                command={command}
+                selected={idx === i}
+                onSelect={() => handleCommand(command)}
+              />
+            ))}
           {detectSection && (
             <>
               {/* Clipboard detection section header */}
@@ -190,7 +255,7 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
                 <ToolRow
                   key={tool.id}
                   tool={tool}
-                  selected={idx === i}
+                  selected={idx === i + commandCount}
                   onSelect={() => handleSelectDetect(tool.id)}
                   badge="recommended"
                 />
@@ -206,20 +271,25 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
 
             </>
           )}
-          {filtered.length === 0 ? (
+          {commandMode ? (
+            commandResults.length === 0 && (
+              <div className="px-4 py-6 text-sm text-neutral-500 text-center">No commands found</div>
+            )
+          ) : filtered.length === 0 ? (
             <div className="px-4 py-6 text-sm text-neutral-500 text-center">No tools found</div>
           ) : (
             filtered.map((tool, i) => (
               <ToolRow
                 key={tool.id}
                 tool={tool}
-                selected={idx === i + detectRowOffset}
+                selected={idx === i + filteredRowOffset}
                 onSelect={() => handleSelectTool(tool.id)}
               />
             ))
           )}
         </div>
         <div className="px-4 py-2 border-t border-neutral-800 text-[10px] text-neutral-600 flex gap-4">
+          <span>type / commands</span>
           <span>↑↓ navigate</span>
           <span>↵ select</span>
           <span>esc close</span>
