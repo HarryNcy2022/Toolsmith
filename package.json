@@ -1,5 +1,5 @@
 {
-  "name": "dev-utils",
+  "name": "toolsmith",
   "version": "0.1.0",
   "description": "Cross-platform offline developer toolbox (Electron + React).",
   "author": "HarryNcy",
@@ -20,8 +20,8 @@
     "dist:linux": "npm run build && electron-builder --linux"
   },
   "build": {
-    "appId": "com.harryncy.devutils",
-    "productName": "DevUtils",
+    "appId": "com.harryncy.toolsmith",
+    "productName": "Toolsmith",
     "directories": {
       "output": "../dev-utils-release",
       "buildResources": "build"

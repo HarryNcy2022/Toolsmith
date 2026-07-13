@@ -1,4 +1,4 @@
-# DevUtils
+# Toolsmith
 
 Cross-platform, offline developer toolbox built with Electron, React, TypeScript, Vite, and Tailwind.
 
@@ -30,7 +30,7 @@ Packaging output goes to `../dev-utils-release/` to avoid editor file-locking is
 
 ## Tools
 
-DevUtils ships 35 tools:
+Toolsmith ships 35 tools:
 
 | Category | Tools |
 |----------|-------|

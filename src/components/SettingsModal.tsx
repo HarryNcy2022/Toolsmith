@@ -37,7 +37,7 @@ function HotkeyField({
 
   useEffect(() => {
     let cancelled = false;
-    window.devutils
+    window.toolsmith
       ?.getConfig(configKey)
       .then((stored) => {
         if (cancelled) return;
@@ -92,7 +92,7 @@ function HotkeyField({
     setSaving(true);
     setMsg(null);
     try {
-      const res = await window.devutils?.setConfig(configKey, captured);
+      const res = await window.toolsmith?.setConfig(configKey, captured);
       if (res?.success) {
         setMsg('Saved');
       } else {

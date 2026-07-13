@@ -23,14 +23,14 @@ Never use `Buffer`, `fs`, `path`, `process`, `require`, or direct Electron impor
 | Base64 | `btoa` / `atob` with byte conversion |
 | Random bytes | `crypto.getRandomValues` |
 | UUID | `crypto.randomUUID()` |
-| Clipboard text | `window.devutils.readClipboard()` or `navigator.clipboard` |
+| Clipboard text | `window.toolsmith.readClipboard()` or `navigator.clipboard` |
 
 Native or filesystem functionality must use this path:
 
 1. Add an `ipcMain.handle(...)` handler in `electron/main.ts`.
 2. Expose it through `electron/preload.ts`.
 3. Type it in `src/global.d.ts`.
-4. Call `window.devutils.<method>()` from the renderer.
+4. Call `window.toolsmith.<method>()` from the renderer.
 
 ## Tool architecture
 

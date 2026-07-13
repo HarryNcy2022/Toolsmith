@@ -15,7 +15,7 @@ function createWindow(): BrowserWindow {
     height: 800,
     minWidth: 900,
     minHeight: 600,
-    title: 'DevUtils',
+    title: 'Toolsmith',
     backgroundColor: '#0a0a0a',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -65,7 +65,7 @@ function registerHotkey(accelerator: string): void {
     toggleWindow();
   });
   if (!ret) {
-    console.warn('[dev-utils] Failed to register global hotkey (' + accelerator + ')');
+    console.warn('[toolsmith] Failed to register global hotkey (' + accelerator + ')');
   }
 }
 
@@ -84,7 +84,7 @@ function safeReRegisterHotkey(accelerator: string): { success: boolean; error?: 
       const cfg = loadConfig();
       saveConfig({ ...cfg, hotkey: accelerator });
     } catch (e) {
-      console.warn('[dev-utils] failed to persist hotkey', e);
+      console.warn('[toolsmith] failed to persist hotkey', e);
     }
     return { success: true };
   }

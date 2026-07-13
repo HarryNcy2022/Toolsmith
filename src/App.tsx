@@ -49,7 +49,7 @@ export function App() {
 
   // History hotkey (default CommandOrControl+Shift+H), independent of ⌘K.
   useEffect(() => {
-    window.devutils
+    window.toolsmith
       ?.getConfig('historyHotkey')
       .then((raw) => {
         if (typeof raw === 'string' && validateAccelerator(raw).valid) {

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 const MAX_PER_TOOL = 10;
-const STORAGE_KEY = 'devutils:history';
+const STORAGE_KEY = 'toolsmith:history';
 
 export interface HistoryEntry {
   input: string;

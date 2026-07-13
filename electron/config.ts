@@ -128,7 +128,7 @@ export function saveConfigTo(path: string, cfg: AppConfig): void {
   try {
     writeFileSync(path, serializeConfig(cfg));
   } catch (e) {
-    console.warn('[dev-utils] failed to save config', e);
+    console.warn('[toolsmith] failed to save config', e);
   }
 }
 

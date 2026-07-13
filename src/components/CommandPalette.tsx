@@ -92,11 +92,11 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
       (async () => {
         try {
           const [raw, hasImage] = await Promise.all([
-            window.devutils
-              ? window.devutils.readClipboard()
+            window.toolsmith
+              ? window.toolsmith.readClipboard()
               : navigator.clipboard.readText(),
-            window.devutils
-              ? window.devutils.clipboardHasImage()
+            window.toolsmith
+              ? window.toolsmith.clipboardHasImage()
               : Promise.resolve(false),
           ]);
           const text = (raw ?? '').trim();

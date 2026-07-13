@@ -1,4 +1,4 @@
-interface DevUtilsAPI {
+interface ToolsmithAPI {
   toggleWindow(): Promise<void>;
   readClipboard(): Promise<string>;
   clipboardHasImage(): Promise<boolean>;
@@ -7,5 +7,5 @@ interface DevUtilsAPI {
 }
 
 interface Window {
-  devutils?: DevUtilsAPI;
+  toolsmith?: ToolsmithAPI;
 }
