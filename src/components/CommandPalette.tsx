@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { getTools, findTool } from '../lib/registry';
 import { detectContentType, getContentTypeInfo, type DetectedContentType } from '../lib/detect-content';
 import { usePendingInput } from '../lib/pending-input';
+import { orderTools, useToolPreferencesStore } from '../lib/tool-preferences';
 import type { Tool } from '../types';
 
 interface CommandPaletteProps {
@@ -15,29 +16,71 @@ interface ToolRowProps {
   tool: Tool;
   selected: boolean;
   onSelect: () => void;
+  onTogglePin: () => void;
+  pinned: boolean;
   badge?: string;
 }
 
-function ToolRow({ tool, selected, onSelect, badge }: ToolRowProps) {
+function ToolRow({ tool, selected, onSelect, onTogglePin, pinned, badge }: ToolRowProps) {
+  function handlePinKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    e.stopPropagation();
+    onTogglePin();
+  }
+
   return (
-    <button
-      onClick={onSelect}
-      className={`w-full text-left px-4 py-2 flex items-center gap-3 transition-colors ${
+    <div
+      className={`w-full px-4 py-2 flex items-center gap-3 transition-colors ${
         selected
           ? 'bg-blue-600/20 text-blue-300'
           : 'text-neutral-300 hover:bg-neutral-800'
       }`}
     >
-      <span className="text-xs uppercase tracking-wide text-neutral-600 w-20 shrink-0">
-        {tool.category}
-      </span>
-      <span className="text-sm flex-1">{tool.name}</span>
-      {badge && (
-        <span className="px-1.5 py-0.5 text-[10px] rounded bg-neutral-800 text-neutral-400 border border-neutral-700">
-          {badge}
+      <button
+        type="button"
+        onClick={onSelect}
+        className="min-w-0 flex-1 text-left flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
+        aria-label={`Select ${tool.name}`}
+      >
+        <span className="text-xs uppercase tracking-wide text-neutral-600 w-20 shrink-0">
+          {tool.category}
         </span>
-      )}
-    </button>
+        <span className="text-sm flex-1">{tool.name}</span>
+        {badge && (
+          <span className="px-1.5 py-0.5 text-[10px] rounded bg-neutral-800 text-neutral-400 border border-neutral-700">
+            {badge}
+          </span>
+        )}
+      </button>
+      <button
+        type="button"
+        aria-label={`${pinned ? 'Unpin' : 'Pin'} ${tool.name}`}
+        aria-pressed={pinned}
+        title={`${pinned ? 'Unpin' : 'Pin'} ${tool.name}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onTogglePin();
+        }}
+        onKeyDown={handlePinKeyDown}
+        className={`shrink-0 rounded p-1.5 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset ${
+          pinned
+            ? 'text-blue-300 hover:bg-blue-600/20'
+            : 'text-neutral-500 hover:bg-neutral-800 hover:text-neutral-300'
+        }`}
+      >
+        <svg
+          className="w-4 h-4"
+          viewBox="0 0 24 24"
+          fill={pinned ? 'currentColor' : 'none'}
+          stroke="currentColor"
+          strokeWidth={2}
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z" />
+        </svg>
+      </button>
+    </div>
   );
 }
 
@@ -81,19 +124,25 @@ export function CommandPalette({ open, onClose, onSelect, onFocusInput }: Comman
   const [clipboardText, setClipboardText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const tools = useMemo(() => getTools(), []);
+  const pinnedIds = useToolPreferencesStore((state) => state.pinnedIds);
+  const recentToolIds = useToolPreferencesStore((state) => state.recentToolIds);
+  const togglePin = useToolPreferencesStore((state) => state.togglePin);
   const commandMode = query.trim().startsWith('/');
 
   const filtered = useMemo(() => {
     if (commandMode) return [];
-    if (!query.trim()) return tools;
-    const q = query.trim().toLowerCase();
-    return tools.filter(
-      (t) =>
-        t.name.toLowerCase().includes(q) ||
-        t.category.toLowerCase().includes(q) ||
-        t.keywords?.some((k) => k.includes(q))
-    );
-  }, [commandMode, query, tools]);
+    const matchingTools = !query.trim()
+      ? tools
+      : tools.filter((t) => {
+          const q = query.trim().toLowerCase();
+          return (
+            t.name.toLowerCase().includes(q) ||
+            t.category.toLowerCase().includes(q) ||
+            t.keywords?.some((k) => k.includes(q))
+          );
+        });
+    return orderTools(matchingTools, pinnedIds, recentToolIds);
+  }, [commandMode, pinnedIds, query, recentToolIds, tools]);
 
   const commandQuery = commandMode ? query.trim().slice(1).trim().toLowerCase() : '';
   const commandResults = useMemo(() => {
@@ -111,7 +160,8 @@ export function CommandPalette({ open, onClose, onSelect, onFocusInput }: Comman
     const isDetecting = query.trim() === '' && detectedContentType !== null && (clipboardText || detectedContentType === 'image');
     if (!isDetecting) return null;
 
-    const info = getContentTypeInfo(detectedContentType!);
+    if (detectedContentType === null) return null;
+    const info = getContentTypeInfo(detectedContentType);
     const recommended: Tool[] = [];
     for (const id of info.recommendedToolIds) {
       const tool = findTool(id);
@@ -152,8 +202,12 @@ export function CommandPalette({ open, onClose, onSelect, onFocusInput }: Comman
             const type = detectContentType(text, hasImage);
             setDetectedContentType(type);
           }
-        } catch (e) {
-          console.warn('[clipboard-detect] Failed to read clipboard:', e);
+        } catch (error) {
+          if (error instanceof Error) {
+            console.warn('[clipboard-detect] Failed to read clipboard:', error);
+          } else {
+            console.warn('[clipboard-detect] Failed to read clipboard:', String(error));
+          }
         }
       })();
 
@@ -174,7 +228,7 @@ export function CommandPalette({ open, onClose, onSelect, onFocusInput }: Comman
 
   const hasDetectRow = detectSection !== null;
   const commandCount = commandMode ? commandResults.length : 0;
-  const recommendedCount = hasDetectRow ? detectSection!.recommended.length : 0;
+  const recommendedCount = detectSection?.recommended.length ?? 0;
   const filteredRowOffset = commandCount + recommendedCount;
   const totalCount = (commandMode ? 0 : filtered.length) + filteredRowOffset;
 
@@ -198,7 +252,8 @@ export function CommandPalette({ open, onClose, onSelect, onFocusInput }: Comman
         if (commandMode && idx < commandCount) {
           handleCommand(commandResults[idx]);
         } else if (hasDetectRow && idx >= commandCount && idx < filteredRowOffset) {
-          handleSelectDetect(detectSection!.recommended[idx - commandCount].id);
+          const recommendedTool = detectSection?.recommended[idx - commandCount];
+          if (recommendedTool) handleSelectDetect(recommendedTool.id);
         } else {
           const itemIdx = idx - filteredRowOffset;
           const item = filtered[itemIdx];
@@ -257,6 +312,8 @@ export function CommandPalette({ open, onClose, onSelect, onFocusInput }: Comman
                   tool={tool}
                   selected={idx === i + commandCount}
                   onSelect={() => handleSelectDetect(tool.id)}
+                  onTogglePin={() => togglePin(tool.id)}
+                  pinned={pinnedIds.includes(tool.id)}
                   badge="recommended"
                 />
               ))}
@@ -284,6 +341,8 @@ export function CommandPalette({ open, onClose, onSelect, onFocusInput }: Comman
                 tool={tool}
                 selected={idx === i + filteredRowOffset}
                 onSelect={() => handleSelectTool(tool.id)}
+                onTogglePin={() => togglePin(tool.id)}
+                pinned={pinnedIds.includes(tool.id)}
               />
             ))
           )}

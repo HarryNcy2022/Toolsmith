@@ -6,6 +6,7 @@ import { CommandPalette } from './components/CommandPalette';
 import { SettingsModal } from './components/SettingsModal';
 import { HistoryPanel } from './components/HistoryPanel';
 import { ActiveToolContext } from './lib/active-tool';
+import { useToolPreferencesStore } from './lib/tool-preferences';
 import { parseAcceleratorToKeys, validateAccelerator } from './lib/accelerator';
 import type { KeyCombo } from './lib/accelerator';
 import { usePendingInput } from './lib/pending-input';
@@ -21,6 +22,7 @@ export function App() {
   const [historyPanelOpen, setHistoryPanelOpen] = useState(false);
   const [focusInputRequest, setFocusInputRequest] = useState(0);
   const mainRef = useRef<HTMLElement>(null);
+  const recordRecent = useToolPreferencesStore((state) => state.recordRecent);
 
   // Parsed history hotkey, read once at mount so the listener doesn't re-subscribe.
   const historyComboRef = useRef<KeyCombo>(parseAcceleratorToKeys('CommandOrControl+Shift+H'));
@@ -97,8 +99,13 @@ export function App() {
     setFocusInputRequest((request) => request + 1);
   }
 
-  function handlePaletteSelect(id: string) {
+  function handleToolSelect(id: string) {
+    recordRecent(id);
     setActiveId(id);
+  }
+
+  function handlePaletteSelect(id: string) {
+    handleToolSelect(id);
     focusInput();
   }
 
@@ -109,7 +116,7 @@ export function App() {
       className="h-full"
     >
       <Panel id="sidebar-panel" defaultSize="22%" minSize="12%" maxSize="50%" collapsible collapsedSize={0}>
-        <Sidebar activeId={activeId} onSelect={setActiveId} />
+        <Sidebar activeId={activeId} onSelect={handleToolSelect} />
       </Panel>
       <Separator className="w-px bg-neutral-800 hover:w-1 hover:bg-blue-600 transition-all duration-200 group flex items-center justify-center shrink-0 data-[resize-handle-active]:bg-blue-600">
         <div className="w-0.5 h-8 rounded-full bg-neutral-600 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -119,7 +126,7 @@ export function App() {
           {ActiveComponent ? (
             <>
               <header className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-800 bg-neutral-950">
-                <h1 className="text-sm font-semibold text-neutral-100">{active!.name}</h1>
+              <h1 className="text-sm font-semibold text-neutral-100">{active?.name ?? ''}</h1>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setPaletteOpen(true)}
@@ -145,7 +152,7 @@ export function App() {
                     🕘
                   </button>
                   <span className="text-[10px] uppercase tracking-wider text-neutral-600">
-                    {active!.category}
+                    {active?.category ?? ''}
                   </span>
                 </div>
               </header>
@@ -156,7 +163,7 @@ export function App() {
               </div>
             </>
           ) : (
-            <ToolList onSelect={setActiveId} />
+            <ToolList onSelect={handleToolSelect} />
           )}
         </main>
       </Panel>
