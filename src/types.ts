@@ -27,3 +27,11 @@ export interface ToolModule {
   meta: ToolMeta;
   component: ComponentType;
 }
+
+export interface SearchSource {
+  id: string;
+  toolId: string;
+  label: string;
+  getContent(): string;
+  scrollToMatch?(startIndex: number, matchLength?: number): void;
+}

@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
-import { EditorView } from '@codemirror/view';
+import { EditorView, type ViewUpdate } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
 
 interface CodeEditorProps {
@@ -11,6 +11,7 @@ interface CodeEditorProps {
   language?: string;
   extensions?: any[];
   className?: string;
+  onViewUpdate?: (view: EditorView) => void;
 }
 
 const darkTheme = EditorView.theme(
@@ -34,8 +35,20 @@ export function CodeEditor({
   placeholder,
   language,
   extensions,
-  className
+  className,
+  onViewUpdate
 }: CodeEditorProps) {
+  const editorViewRef = useRef<EditorView | null>(null);
+  const handleUpdate = useCallback(
+    (update: ViewUpdate) => {
+      if (onViewUpdate && !editorViewRef.current) {
+        editorViewRef.current = update.view;
+        onViewUpdate(update.view);
+      }
+    },
+    [onViewUpdate]
+  );
+
   const exts = useMemo(() => {
     const base = [EditorView.lineWrapping];
     if (extensions) base.push(...extensions);
@@ -58,6 +71,7 @@ export function CodeEditor({
       extensions={exts}
       height="100%"
       className={editorClassName}
+      onUpdate={handleUpdate}
       basicSetup={{
         lineNumbers: true,
         highlightActiveLine: !readOnly,

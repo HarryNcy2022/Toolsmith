@@ -5,11 +5,13 @@ import { ToolList } from './components/ToolList';
 import { CommandPalette } from './components/CommandPalette';
 import { SettingsModal } from './components/SettingsModal';
 import { HistoryPanel } from './components/HistoryPanel';
+import { SearchOverlay } from './components/SearchOverlay';
 import { ActiveToolContext } from './lib/active-tool';
 import { useToolPreferencesStore } from './lib/tool-preferences';
 import { parseAcceleratorToKeys, validateAccelerator } from './lib/accelerator';
 import type { KeyCombo } from './lib/accelerator';
 import { usePendingInput } from './lib/pending-input';
+import { useToolSearch } from './lib/tool-search';
 import { Group, Panel, Separator } from 'react-resizable-panels';
 
 // pull in all tool modules so they self-register on import
@@ -64,6 +66,21 @@ export function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  // ⌘F / Ctrl+F to open search, Escape to close
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const search = useToolSearch.getState();
+      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+        e.preventDefault();
+        search.open();
+      } else if (e.key === 'Escape' && search.isOpen) {
+        search.close();
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   // History hotkey (default CommandOrControl+Shift+H), independent of ⌘K.
   useEffect(() => {
     window.toolsmith
@@ -100,6 +117,7 @@ export function App() {
   }
 
   function handleToolSelect(id: string) {
+    useToolSearch.getState().close();
     recordRecent(id);
     setActiveId(id);
   }
@@ -128,6 +146,13 @@ export function App() {
               <header className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-800 bg-neutral-950">
               <h1 className="text-sm font-semibold text-neutral-100">{active?.name ?? ''}</h1>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => useToolSearch.getState().open()}
+                    className="px-2.5 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200 transition-colors"
+                    title="⌘F"
+                  >
+                    ⌘F
+                  </button>
                   <button
                     onClick={() => setPaletteOpen(true)}
                     className="px-2.5 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200 transition-colors"
@@ -182,6 +207,9 @@ export function App() {
         onClose={() => setHistoryPanelOpen(false)}
         onLoad={(text) => usePendingInput.getState().setPendingInput(activeId, text)}
       />
+      <ActiveToolContext.Provider value={activeId}>
+        <SearchOverlay />
+      </ActiveToolContext.Provider>
     </>
   );
 }

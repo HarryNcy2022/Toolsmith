@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import type { EditorView } from '@codemirror/view';
 import { CopyButton } from './CopyButton';
 import { CodeEditor } from './CodeEditor';
 import { useHistoryStore } from '../lib/history';
 import { useActiveToolId } from '../lib/active-tool';
 import { usePendingInput } from '../lib/pending-input';
+import { useToolSearch } from '../lib/tool-search';
+import type { SearchSource } from '../types';
 
 interface IOPanelProps {
   title: string;
@@ -32,6 +35,14 @@ export function IOPanel({
   const push = useHistoryStore((s) => s.push);
   const contextToolId = useActiveToolId();
   const resolvedToolId = toolId || contextToolId;
+
+  const [editorView, setEditorView] = useState<EditorView | null>(null);
+  const instanceId = useId();
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
+  const registerSource = useToolSearch((s) => s.registerSource);
+  const unregisterSource = useToolSearch((s) => s.unregisterSource);
 
   // --- Input history recording (debounced) ---
   const HISTORY_DEBOUNCE_MS = 4000;
@@ -73,6 +84,28 @@ export function IOPanel({
     return () => unsub();
   }, [resolvedToolId, onChange, readOnly]);
 
+  // --- Register as a global search source ---
+  useEffect(() => {
+    if (!resolvedToolId) return;
+    const sourceId = `${resolvedToolId}:${title.toLowerCase().replace(/\s+/g, '-')}-${instanceId}`;
+    const source: SearchSource = {
+      id: sourceId,
+      toolId: resolvedToolId,
+      label: title,
+      getContent: () => valueRef.current,
+      scrollToMatch: editorView
+        ? (startIndex, matchLength) => {
+            editorView.dispatch({
+              selection: { anchor: startIndex, head: startIndex + (matchLength ?? 0) },
+              scrollIntoView: true,
+            });
+          }
+        : undefined,
+    };
+    registerSource(source);
+    return () => unregisterSource(sourceId);
+  }, [resolvedToolId, title, registerSource, unregisterSource, editorView]);
+
   return (
     <div className="flex flex-col min-h-0 flex-1 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden">
       <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-800 bg-neutral-900/80">
@@ -89,6 +122,7 @@ export function IOPanel({
           readOnly={readOnly}
           placeholder={placeholder}
           extensions={extensions}
+          onViewUpdate={setEditorView}
         />
         {readOnly && error && (
           <div className="absolute inset-0 flex items-center justify-center bg-neutral-950/60 backdrop-blur-sm z-10">
