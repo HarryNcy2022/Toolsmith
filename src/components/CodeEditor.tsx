@@ -2,6 +2,8 @@ import { useCallback, useMemo, useRef } from 'react';
 import CodeMirror from '@uiw/react-codemirror';
 import { EditorView, type ViewUpdate } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
+import { syntaxHighlighting, HighlightStyle } from '@codemirror/language';
+import { tags } from '@lezer/highlight';
 
 interface CodeEditorProps {
   value: string;
@@ -28,6 +30,13 @@ const darkTheme = EditorView.theme(
   { dark: true }
 );
 
+/** Brighter syntax colors for tokens hard to see on dark bg */
+const brightSyntax = syntaxHighlighting(
+  HighlightStyle.define([
+    { tag: tags.url, color: '#22d3ee' },
+  ])
+);
+
 export function CodeEditor({
   value,
   onChange,
@@ -50,12 +59,13 @@ export function CodeEditor({
   );
 
   const exts = useMemo(() => {
-    const base = [EditorView.lineWrapping];
+    const base = [EditorView.lineWrapping, brightSyntax];
     if (extensions) base.push(...extensions);
     return base;
   }, [extensions]);
   const editorClassName = [
     className,
+    'h-full',
     !readOnly && onChange ? 'toolsmith-input-editor' : undefined
   ]
     .filter(Boolean)

@@ -55,19 +55,29 @@ function Component() {
       </div>
 
       <SplitPane orientation="row" id="text-diff">
-        <textarea
-          data-toolsmith-focus-input
-          value={left}
-          onChange={(e) => setLeft(e.target.value)}
-          placeholder="Original"
-          className="w-full p-3 bg-neutral-900/50 border border-neutral-800 rounded-lg text-sm font-mono text-neutral-200 resize-none focus:outline-none focus:border-neutral-600"
-        />
-        <textarea
-          value={right}
-          onChange={(e) => setRight(e.target.value)}
-          placeholder="Changed"
-          className="w-full p-3 bg-neutral-900/50 border border-neutral-800 rounded-lg text-sm font-mono text-neutral-200 resize-none focus:outline-none focus:border-neutral-600"
-        />
+        <div className="flex flex-col h-full bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden">
+          <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-neutral-400 border-b border-neutral-800">
+            Original
+          </div>
+          <textarea
+            data-toolsmith-focus-input
+            value={left}
+            onChange={(e) => setLeft(e.target.value)}
+            placeholder="Original"
+            className="flex-1 min-h-0 w-full p-3 bg-transparent text-sm font-mono text-neutral-200 resize-none focus:outline-none"
+          />
+        </div>
+        <div className="flex flex-col h-full bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden">
+          <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-neutral-400 border-b border-neutral-800">
+            Changed
+          </div>
+          <textarea
+            value={right}
+            onChange={(e) => setRight(e.target.value)}
+            placeholder="Changed"
+            className="flex-1 min-h-0 w-full p-3 bg-transparent text-sm font-mono text-neutral-200 resize-none focus:outline-none"
+          />
+        </div>
       </SplitPane>
 
       <div className="flex-1 min-h-0 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-auto p-3">

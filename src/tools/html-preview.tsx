@@ -80,7 +80,7 @@ function Component() {
 
   return (
     <SplitPane orientation="row" id="html-preview" className="h-full">
-      <div className="flex flex-col min-h-0 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden">
+      <div className="flex flex-col min-h-0 h-full bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden">
         <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-neutral-400 border-b border-neutral-800">
           HTML
         </div>
@@ -94,7 +94,7 @@ function Component() {
           />
         </div>
       </div>
-      <div className="flex flex-col min-h-0 bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden">
+      <div className="flex flex-col min-h-0 h-full bg-neutral-900/50 border border-neutral-800 rounded-lg overflow-hidden">
         <div className="px-3 py-2 text-xs font-medium uppercase tracking-wide text-neutral-400 border-b border-neutral-800">
           Preview
         </div>
