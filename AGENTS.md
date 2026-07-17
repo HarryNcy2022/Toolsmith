@@ -49,6 +49,10 @@ registerTool({
 - Do not edit `registry.ts`, `App.tsx`, or sidebar code merely to register a tool.
 - Keep small transforms as named exported functions. Move substantial pure parsing/conversion logic into `src/lib/`.
 - Prefer local modules over new abstraction layers when logic has one consumer.
+- Tools that render content into the DOM (markdown preview, HTML preview)
+  must register SearchSources in a `useEffect` for the rendered content to
+  be searchable via `⌘F`. See `src/tools/markdown-preview.tsx` for the pattern.
+  Tools using `IOPanel` are auto-registered.
 
 Common UI shapes:
 

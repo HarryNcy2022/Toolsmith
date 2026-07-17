@@ -45,6 +45,7 @@ Toolsmith ships 35 tools:
 
 ## Global features
 
+- Cross-tool text search: `⌘F` / `Ctrl+F` — search within any tool's content
 - Command palette with clipboard content detection: `⌘K` / `Ctrl+K`
 - Global show/hide hotkey: `Cmd/Ctrl+Shift+D`
 - Resizable tool panes and sidebar
@@ -71,6 +72,11 @@ Large dependencies such as `curlconverter`, `quicktype-core`, `sass`, `terser`, 
 1. Create `src/tools/<id>.tsx` and call `registerTool(...)` at module scope.
 2. Import it from `src/tools/index.ts`.
 3. Put substantial pure transformation logic in `src/lib/`.
+
+If the tool renders content into the DOM (e.g. markdown preview, HTML preview),
+register a `SearchSource` so `⌘F` search can index the rendered text. See
+`src/tools/markdown-preview.tsx` for the pattern. Tools using `IOPanel` for
+input/output panes are auto-registered.
 
 No routing or sidebar edits are required.
 
