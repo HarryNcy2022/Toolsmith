@@ -56,6 +56,19 @@ describe('SettingsModal', () => {
 
     // Exactly two per-field Reset buttons
     expect(screen.getAllByText('Reset')).toHaveLength(2);
+
+    // R1: each capture box fills remaining row width (flex-1 + min-w-0)
+    const boxes = screen.getAllByRole('textbox');
+    for (const box of boxes) {
+      expect(box.className).toContain('flex-1');
+      expect(box.className).toContain('min-w-0');
+    }
+    // R1: box+reset wrapper grows to fill the row and allows shrink
+    const wrappers = boxes.map((b) => b.parentElement as HTMLElement);
+    for (const w of wrappers) {
+      expect(w.className).toContain('flex-1');
+      expect(w.className).toContain('min-w-0');
+    }
   });
 
   /** QA-02: mount hydrate — stored values populate the capture boxes. */
@@ -182,6 +195,17 @@ describe('SettingsModal', () => {
       'CommandOrControl+Shift+H',
     );
     expect(ts.setConfig).toHaveBeenCalledTimes(2);
+
+    // R3: save row is right-aligned and msg sits immediately left of button.
+    const saveRow = saveBtn.parentElement as HTMLElement;
+    expect(saveRow.className).toContain('justify-end');
+
+    // When a msg is present, it must be DOM-before the Save button.
+    const msg = screen.queryByText('Saved');
+    if (msg) {
+      expect(msg.compareDocumentPosition(saveBtn) &
+        Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
   });
 
   /** QA-08: per-field Reset reverts only the global field locally, without

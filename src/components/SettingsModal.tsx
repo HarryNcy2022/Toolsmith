@@ -208,13 +208,13 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): JSX.Elemen
               <div className="flex flex-col min-w-0">
                 <span className="text-sm text-neutral-200" title="Click the box below and press a key combination to capture it.">Global hotkey</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
                 <div
                   tabIndex={0}
                   role="textbox"
                   aria-label="Capture global hotkey"
                   onKeyDown={hotkeyHandler}
-                  className={"outline-none px-3 py-2 rounded border " + (hotkeyError ? "border-red-500" : "border-neutral-700") + " bg-neutral-900 text-neutral-100 text-sm focus:border-blue-600 focus:text-neutral-200 transition-colors select-none"}
+                  className={"outline-none flex-1 min-w-0 text-left px-3 py-1 rounded border " + (hotkeyError ? "border-red-500" : "border-neutral-700") + " bg-neutral-900 text-neutral-100 text-sm focus:border-blue-600 focus:text-neutral-200 transition-colors select-none"}
                 >
                   {hotkeyError ? (
                     <span className="text-red-400">{hotkeyError}</span>
@@ -227,7 +227,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): JSX.Elemen
                 <button
                   type="button"
                   onClick={resetHotkey}
-                  className="px-2.5 py-2 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200 transition-colors"
+                  className="px-2.5 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200 transition-colors"
                 >
                   Reset
                 </button>
@@ -239,13 +239,13 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): JSX.Elemen
               <div className="flex flex-col min-w-0">
                 <span className="text-sm text-neutral-200" title="Opens the per-tool history panel for the active tool. This is a window shortcut, not an OS global shortcut.">History panel hotkey</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
                 <div
                   tabIndex={0}
                   role="textbox"
                   aria-label="Capture history panel hotkey"
                   onKeyDown={historyHandler}
-                  className={"outline-none px-3 py-2 rounded border " + (historyError ? "border-red-500" : "border-neutral-700") + " bg-neutral-900 text-neutral-100 text-sm focus:border-blue-600 focus:text-neutral-200 transition-colors select-none"}
+                  className={"outline-none flex-1 min-w-0 text-left px-3 py-1 rounded border " + (historyError ? "border-red-500" : "border-neutral-700") + " bg-neutral-900 text-neutral-100 text-sm focus:border-blue-600 focus:text-neutral-200 transition-colors select-none"}
                 >
                   {historyError ? (
                     <span className="text-red-400">{historyError}</span>
@@ -258,22 +258,14 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): JSX.Elemen
                 <button
                   type="button"
                   onClick={resetHistory}
-                  className="px-2.5 py-2 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200 transition-colors"
+                  className="px-2.5 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200 transition-colors"
                 >
                   Reset
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={handleSaveAll}
-                disabled={!canSave || saving}
-                className="px-2.5 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                {saving ? 'Saving…' : 'Save changes'}
-              </button>
+            <div className="flex items-center justify-end gap-2 pt-1">
               {msg && (
                 <span
                   className={
@@ -283,6 +275,14 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): JSX.Elemen
                   {msg}
                 </span>
               )}
+              <button
+                type="button"
+                onClick={handleSaveAll}
+                disabled={!canSave || saving}
+                className="px-2.5 py-1 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                {saving ? 'Saving…' : 'Save changes'}
+              </button>
             </div>
           </section>
 
