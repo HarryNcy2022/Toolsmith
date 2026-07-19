@@ -57,17 +57,29 @@ describe('SettingsModal', () => {
     // Exactly two per-field Reset buttons
     expect(screen.getAllByText('Reset')).toHaveLength(2);
 
-    // R1: each capture box fills remaining row width (flex-1 + min-w-0)
+    // R1: capture boxes are direct children of ONE shared grid (table-like,
+    // equal-width 1fr column). Assert the new structure.
     const boxes = screen.getAllByRole('textbox');
+
+    // Each box keeps min-w-0 + text-left; grid (not flex-1) handles sizing.
     for (const box of boxes) {
-      expect(box.className).toContain('flex-1');
       expect(box.className).toContain('min-w-0');
+      expect(box.className).toContain('text-left');
+      expect(box.className).not.toContain('flex-1');
     }
-    // R1: box+reset wrapper grows to fill the row and allows shrink
-    const wrappers = boxes.map((b) => b.parentElement as HTMLElement);
-    for (const w of wrappers) {
-      expect(w.className).toContain('flex-1');
-      expect(w.className).toContain('min-w-0');
+
+    // Both boxes share the SAME parent (the grid wrapper) -> aligned columns.
+    const grid = boxes[0].parentElement as HTMLElement;
+    expect(grid).toBe(boxes[1].parentElement);
+    expect(grid.className).toContain('grid');
+    expect(grid.className).toContain('items-center');
+    // 6 direct children: Label1, Box1, Reset1, Label2, Box2, Reset2.
+    expect(grid.children.length).toBe(6);
+
+    // Reset buttons are direct children of the same grid (own auto column).
+    const resets = screen.getAllByText('Reset');
+    for (const btn of resets) {
+      expect(btn.parentElement).toBe(grid);
     }
   });
 

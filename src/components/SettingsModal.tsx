@@ -203,66 +203,61 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): JSX.Elemen
               Keyboard shortcuts
             </h3>
 
-            {/* Global hotkey row */}
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex flex-col min-w-0">
+            {/* Keyboard shortcuts: shared grid so both capture boxes share one
+                equal-width column (table-like, no <table>). Columns:
+                [label auto] [capture box 1fr] [reset auto]. */}
+            <div className="grid grid-cols-[auto_1fr_auto] gap-x-3 gap-y-3 items-center">
+              <div className="flex flex-col">
                 <span className="text-sm text-neutral-200" title="Click the box below and press a key combination to capture it.">Global hotkey</span>
               </div>
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                <div
-                  tabIndex={0}
-                  role="textbox"
-                  aria-label="Capture global hotkey"
-                  onKeyDown={hotkeyHandler}
-                  className={"outline-none flex-1 min-w-0 text-left px-3 py-1 rounded border " + (hotkeyError ? "border-red-500" : "border-neutral-700") + " bg-neutral-900 text-neutral-100 text-sm focus:border-blue-600 focus:text-neutral-200 transition-colors select-none"}
-                >
-                  {hotkeyError ? (
-                    <span className="text-red-400">{hotkeyError}</span>
-                  ) : hotkey ? (
-                    formatAcceleratorForDisplay(hotkey, platform)
-                  ) : (
-                    <span className="text-neutral-600">Press a shortcut…</span>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={resetHotkey}
-                  className="px-2.5 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200 transition-colors"
-                >
-                  Reset
-                </button>
+              <div
+                tabIndex={0}
+                role="textbox"
+                aria-label="Capture global hotkey"
+                onKeyDown={hotkeyHandler}
+                className={"outline-none min-w-0 text-left px-3 py-1 rounded border " + (hotkeyError ? "border-red-500" : "border-neutral-700") + " bg-neutral-900 text-neutral-100 text-sm focus:border-blue-600 focus:text-neutral-200 transition-colors select-none"}
+              >
+                {hotkeyError ? (
+                  <span className="text-red-400">{hotkeyError}</span>
+                ) : hotkey ? (
+                  formatAcceleratorForDisplay(hotkey, platform)
+                ) : (
+                  <span className="text-neutral-600">Press a shortcut…</span>
+                )}
               </div>
-            </div>
+              <button
+                type="button"
+                onClick={resetHotkey}
+                className="px-2.5 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200 transition-colors"
+              >
+                Reset
+              </button>
 
-            {/* History panel hotkey row */}
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex flex-col min-w-0">
+              <div className="flex flex-col">
                 <span className="text-sm text-neutral-200" title="Opens the per-tool history panel for the active tool. This is a window shortcut, not an OS global shortcut.">History panel hotkey</span>
               </div>
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                <div
-                  tabIndex={0}
-                  role="textbox"
-                  aria-label="Capture history panel hotkey"
-                  onKeyDown={historyHandler}
-                  className={"outline-none flex-1 min-w-0 text-left px-3 py-1 rounded border " + (historyError ? "border-red-500" : "border-neutral-700") + " bg-neutral-900 text-neutral-100 text-sm focus:border-blue-600 focus:text-neutral-200 transition-colors select-none"}
-                >
-                  {historyError ? (
-                    <span className="text-red-400">{historyError}</span>
-                  ) : historyHotkey ? (
-                    formatAcceleratorForDisplay(historyHotkey, platform)
-                  ) : (
-                    <span className="text-neutral-600">Press a shortcut…</span>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={resetHistory}
-                  className="px-2.5 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200 transition-colors"
-                >
-                  Reset
-                </button>
+              <div
+                tabIndex={0}
+                role="textbox"
+                aria-label="Capture history panel hotkey"
+                onKeyDown={historyHandler}
+                className={"outline-none min-w-0 text-left px-3 py-1 rounded border " + (historyError ? "border-red-500" : "border-neutral-700") + " bg-neutral-900 text-neutral-100 text-sm focus:border-blue-600 focus:text-neutral-200 transition-colors select-none"}
+              >
+                {historyError ? (
+                  <span className="text-red-400">{historyError}</span>
+                ) : historyHotkey ? (
+                  formatAcceleratorForDisplay(historyHotkey, platform)
+                ) : (
+                  <span className="text-neutral-600">Press a shortcut…</span>
+                )}
               </div>
+              <button
+                type="button"
+                onClick={resetHistory}
+                className="px-2.5 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200 transition-colors"
+              >
+                Reset
+              </button>
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-1">
