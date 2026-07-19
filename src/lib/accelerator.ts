@@ -166,3 +166,34 @@ export function parseAcceleratorToKeys(accel: string): KeyCombo {
   }
   return { ctrl, meta, alt, shift, key };
 }
+
+export type Platform = 'mac' | 'win' | 'linux' | 'unknown';
+
+/**
+ * Format an Electron accelerator string for human-friendly display.
+ * On macOS uses symbol keys (⌘⌃⌥⇧); on other platforms uses spelled-out text.
+ */
+export function formatAcceleratorForDisplay(
+  accel: string,
+  platform: Platform
+): string {
+  const { ctrl, shift, alt, meta, key } = parseAcceleratorToKeys(accel);
+  const k = key.length === 1 ? key.toUpperCase() : key;
+
+  if (platform === 'mac') {
+    const parts: string[] = [];
+    if (meta) parts.push('⌘');
+    else if (ctrl) parts.push('⌃');
+    if (alt) parts.push('⌥');
+    if (shift) parts.push('⇧');
+    parts.push(k);
+    return parts.join('');
+  }
+
+  const parts: string[] = [];
+  if (ctrl || meta) parts.push('Ctrl');
+  if (alt) parts.push('Alt');
+  if (shift) parts.push('Shift');
+  parts.push(k);
+  return parts.join('+');
+}
