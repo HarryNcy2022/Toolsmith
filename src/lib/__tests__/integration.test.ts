@@ -66,6 +66,7 @@ describe('config accelerator flow (S2/S4)', () => {
   it('roundtrip: format -> validate -> parse is stable', () => {
     const combo: KeyCombo = { ctrl: true, meta: true, alt: false, shift: true, key: 'E' };
     const accel = formatKeysToAccelerator(combo);
+    expect(accel).toBe('Control+Command+Shift+E');
     expect(validateAccelerator(accel).valid).toBe(true);
     const back = parseAcceleratorToKeys(accel);
     expect(back.ctrl).toBe(true);

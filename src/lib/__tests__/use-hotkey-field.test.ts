@@ -76,7 +76,7 @@ describe('useHotkeyField', () => {
       result.current.handler(mockEvent({ key: 'X', ctrlKey: true, shiftKey: true }));
     });
 
-    expect(result.current.value).toBe('CommandOrControl+Shift+X');
+    expect(result.current.value).toBe('Control+Shift+X');
     expect(result.current.error).toBeNull();
     expect(result.current.isDefault).toBe(false);
   });
@@ -118,7 +118,7 @@ describe('useHotkeyField', () => {
     act(() => {
       result.current.handler(mockEvent({ key: 'X', ctrlKey: true, shiftKey: true }));
     });
-    expect(result.current.value).toBe('CommandOrControl+Shift+X');
+    expect(result.current.value).toBe('Control+Shift+X');
 
     act(() => {
       result.current.reset();

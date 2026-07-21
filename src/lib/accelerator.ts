@@ -124,7 +124,8 @@ export function validateAccelerator(accel: string): { valid: boolean; error?: st
 /** Build an Electron accelerator string from a captured key combo. */
 export function formatKeysToAccelerator(combo: KeyCombo): string {
   const mods: string[] = [];
-  if (combo.ctrl || combo.meta) mods.push('CommandOrControl');
+  if (combo.ctrl) mods.push('Control');
+  if (combo.meta) mods.push('Command');
   if (combo.alt) mods.push('Alt');
   if (combo.shift) mods.push('Shift');
   const key = combo.key.length === 1 ? combo.key.toUpperCase() : combo.key;
