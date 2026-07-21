@@ -9,6 +9,7 @@ import { SearchOverlay } from './components/SearchOverlay';
 import { ActiveToolContext } from './lib/active-tool';
 import { useToolPreferencesStore } from './lib/tool-preferences';
 import { parseAcceleratorToKeys, validateAccelerator } from './lib/accelerator';
+import { DEFAULT_HISTORY_HOTKEY } from './lib/hotkey-config';
 import type { KeyCombo } from './lib/accelerator';
 import { usePendingInput } from './lib/pending-input';
 import { useToolSearch } from './lib/tool-search';
@@ -23,11 +24,12 @@ export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [historyPanelOpen, setHistoryPanelOpen] = useState(false);
   const [focusInputRequest, setFocusInputRequest] = useState(0);
+  const [settingsKey, setSettingsKey] = useState(0);
   const mainRef = useRef<HTMLElement>(null);
   const recordRecent = useToolPreferencesStore((state) => state.recordRecent);
 
   // Parsed history hotkey, read once at mount so the listener doesn't re-subscribe.
-  const historyComboRef = useRef<KeyCombo>(parseAcceleratorToKeys('CommandOrControl+Shift+H'));
+  const historyComboRef = useRef<KeyCombo>(parseAcceleratorToKeys(DEFAULT_HISTORY_HOTKEY));
 
   // keep active tool in URL hash so reload/back works
   useEffect(() => {
@@ -81,7 +83,7 @@ export function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // History hotkey (default CommandOrControl+Shift+H), independent of ⌘K.
+  // Read history hotkey from config. Runs on mount and after every settings save.
   useEffect(() => {
     window.toolsmith
       ?.getConfig('historyHotkey')
@@ -91,7 +93,10 @@ export function App() {
         }
       })
       .catch(() => {});
+  }, [settingsKey]);
 
+  // History hotkey listener, stable across saves — reads from ref.
+  useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const combo = historyComboRef.current;
       const match =
@@ -200,7 +205,7 @@ export function App() {
         onSelect={handlePaletteSelect}
         onFocusInput={focusInput}
       />
-      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} onSaved={() => setSettingsKey(k => k + 1)} />
       <HistoryPanel
         toolId={activeId}
         open={historyPanelOpen}

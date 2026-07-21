@@ -1,129 +1,31 @@
-import { useEffect, useState, useCallback, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import {
-  validateAccelerator,
-  formatKeysToAccelerator,
-  formatAcceleratorForDisplay,
-  type KeyCombo
-} from '../lib/accelerator';
+import { useEffect, useState, useCallback } from 'react';
+import { formatAcceleratorForDisplay } from '../lib/accelerator';
 import { useHistoryStore } from '../lib/history';
 import { canSaveAll } from '../lib/settings';
-
-const DEFAULT_HOTKEY = 'CommandOrControl+Shift+D';
-
-const MODIFIER_KEYS = new Set(['Control', 'Shift', 'Alt', 'Meta', 'AltGraph']);
+import { detectPlatform } from '../lib/platform';
+import { DEFAULT_HOTKEY, DEFAULT_HISTORY_HOTKEY } from '../lib/hotkey-config';
+import { useHotkeyField } from '../lib/use-hotkey-field';
 
 interface SettingsModalProps {
   open: boolean;
   onClose: () => void;
+  onSaved?: () => void;
 }
 
-export function SettingsModal({ open, onClose }: SettingsModalProps): JSX.Element | null {
+export function SettingsModal({ open, onClose, onSaved }: SettingsModalProps): JSX.Element | null {
   const [historyMsg, setHistoryMsg] = useState<string | null>(null);
-  const [hotkey, setHotkey] = useState<string>(DEFAULT_HOTKEY);
-  const [historyHotkey, setHistoryHotkey] = useState<string>('CommandOrControl+Shift+H');
-  const [hotkeyError, setHotkeyError] = useState<string | null>(null);
-  const [historyError, setHistoryError] = useState<string | null>(null);
   const [saving, setSaving] = useState<boolean>(false);
   const [msg, setMsg] = useState<string | null>(null);
 
+  const globalField = useHotkeyField('hotkey', DEFAULT_HOTKEY);
+  const historyField = useHotkeyField('historyHotkey', DEFAULT_HISTORY_HOTKEY);
+
+  // Clear save feedback whenever user edits either field.
   useEffect(() => {
-    let cancelled = false;
-    window.toolsmith
-      ?.getConfig('hotkey')
-      .then((stored) => {
-        if (cancelled) return;
-        const value =
-          typeof stored === 'string' && stored.trim().length > 0
-            ? stored
-            : DEFAULT_HOTKEY;
-        setHotkey(value);
-        const v = validateAccelerator(value);
-        setHotkeyError(v.valid ? null : (v.error ?? 'Invalid accelerator'));
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setHotkey(DEFAULT_HOTKEY);
-        setHotkeyError(null);
-      });
-    window.toolsmith
-      ?.getConfig('historyHotkey')
-      .then((stored) => {
-        if (cancelled) return;
-        const defaultValue = 'CommandOrControl+Shift+H';
-        const value =
-          typeof stored === 'string' && stored.trim().length > 0
-            ? stored
-            : defaultValue;
-        setHistoryHotkey(value);
-        const v = validateAccelerator(value);
-        setHistoryError(v.valid ? null : (v.error ?? 'Invalid accelerator'));
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setHistoryHotkey('CommandOrControl+Shift+H');
-        setHistoryError(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const makeCaptureHandler = useCallback(
-    (
-      setValue: React.Dispatch<React.SetStateAction<string>>,
-      setError: React.Dispatch<React.SetStateAction<string | null>>
-    ) =>
-      (e: ReactKeyboardEvent<HTMLDivElement>) => {
-        // Let Escape bubble so the modal-level handler closes the dialog.
-        if (e.key === 'Escape') return;
-        // Capture the keystroke so the underlying app never sees it.
-        e.preventDefault();
-        e.stopPropagation();
-
-        // Pure modifier presses must not produce a final accelerator.
-        if (MODIFIER_KEYS.has(e.key)) return;
-
-        const combo: KeyCombo = {
-          ctrl: e.ctrlKey,
-          shift: e.shiftKey,
-          alt: e.altKey,
-          meta: e.metaKey,
-          key: e.key
-        };
-        const accel = formatKeysToAccelerator(combo);
-        setValue(accel);
-        const v = validateAccelerator(accel);
-        setError(v.valid ? null : (v.error ?? 'Invalid accelerator'));
-        setMsg(null);
-      },
-    []
-  );
-
-  const hotkeyHandler = useCallback(
-    (e: ReactKeyboardEvent<HTMLDivElement>) =>
-      makeCaptureHandler(setHotkey, setHotkeyError)(e),
-    [makeCaptureHandler]
-  );
-
-  const historyHandler = useCallback(
-    (e: ReactKeyboardEvent<HTMLDivElement>) =>
-      makeCaptureHandler(setHistoryHotkey, setHistoryError)(e),
-    [makeCaptureHandler]
-  );
-
-  const resetHotkey = useCallback(() => {
-    setHotkey(DEFAULT_HOTKEY);
-    setHotkeyError(null);
     setMsg(null);
-  }, []);
+  }, [globalField.value, historyField.value]);
 
-  const resetHistory = useCallback(() => {
-    setHistoryHotkey('CommandOrControl+Shift+H');
-    setHistoryError(null);
-    setMsg(null);
-  }, []);
-
-  const canSave = canSaveAll(hotkey, historyHotkey);
+  const canSave = canSaveAll(globalField.value, historyField.value);
 
   const handleSaveAll = useCallback(async () => {
     if (!canSave) return;
@@ -131,11 +33,12 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): JSX.Elemen
     setMsg(null);
     try {
       const [r1, r2] = await Promise.all([
-        window.toolsmith?.setConfig('hotkey', hotkey),
-        window.toolsmith?.setConfig('historyHotkey', historyHotkey)
+        window.toolsmith?.setConfig('hotkey', globalField.value),
+        window.toolsmith?.setConfig('historyHotkey', historyField.value),
       ]);
       if (r1?.success && r2?.success) {
         setMsg('Saved');
+        onSaved?.();
       } else {
         setMsg(r1?.error ?? r2?.error ?? 'Failed to save hotkeys');
       }
@@ -144,7 +47,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): JSX.Elemen
     } finally {
       setSaving(false);
     }
-  }, [canSave, hotkey, historyHotkey]);
+  }, [canSave, globalField.value, historyField.value, onSaved]);
 
   // Close on Escape while the modal is open.
   useEffect(() => {
@@ -165,10 +68,7 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): JSX.Elemen
     window.setTimeout(() => setHistoryMsg(null), 2500);
   }, []);
 
-  const platform: 'mac' | 'win' | 'linux' | 'unknown' =
-    typeof navigator !== 'undefined' && /Mac/i.test(navigator.platform || navigator.userAgent || '')
-      ? 'mac'
-      : 'win';
+  const platform = detectPlatform();
 
   if (!open) return null;
 
@@ -214,20 +114,20 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): JSX.Elemen
                 tabIndex={0}
                 role="textbox"
                 aria-label="Capture global hotkey"
-                onKeyDown={hotkeyHandler}
-                className={"outline-none min-w-0 text-left px-3 py-1 rounded border " + (hotkeyError ? "border-red-500" : "border-neutral-700") + " bg-neutral-900 text-neutral-100 text-sm focus:border-blue-600 focus:text-neutral-200 transition-colors select-none"}
+                onKeyDown={globalField.handler}
+                className={"outline-none min-w-0 text-left px-3 py-1 rounded border " + (globalField.error ? "border-red-500" : "border-neutral-700") + " bg-neutral-900 text-neutral-100 text-sm focus:border-blue-600 focus:text-neutral-200 transition-colors select-none"}
               >
-                {hotkeyError ? (
-                  <span className="text-red-400">{hotkeyError}</span>
-                ) : hotkey ? (
-                  formatAcceleratorForDisplay(hotkey, platform)
+                {globalField.error ? (
+                  <span className="text-red-400">{globalField.error}</span>
+                ) : globalField.value ? (
+                  formatAcceleratorForDisplay(globalField.value, platform)
                 ) : (
                   <span className="text-neutral-600">Press a shortcut…</span>
                 )}
               </div>
               <button
                 type="button"
-                onClick={resetHotkey}
+                onClick={globalField.reset}
                 className="px-2.5 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200 transition-colors"
               >
                 Reset
@@ -240,20 +140,20 @@ export function SettingsModal({ open, onClose }: SettingsModalProps): JSX.Elemen
                 tabIndex={0}
                 role="textbox"
                 aria-label="Capture history panel hotkey"
-                onKeyDown={historyHandler}
-                className={"outline-none min-w-0 text-left px-3 py-1 rounded border " + (historyError ? "border-red-500" : "border-neutral-700") + " bg-neutral-900 text-neutral-100 text-sm focus:border-blue-600 focus:text-neutral-200 transition-colors select-none"}
+                onKeyDown={historyField.handler}
+                className={"outline-none min-w-0 text-left px-3 py-1 rounded border " + (historyField.error ? "border-red-500" : "border-neutral-700") + " bg-neutral-900 text-neutral-100 text-sm focus:border-blue-600 focus:text-neutral-200 transition-colors select-none"}
               >
-                {historyError ? (
-                  <span className="text-red-400">{historyError}</span>
-                ) : historyHotkey ? (
-                  formatAcceleratorForDisplay(historyHotkey, platform)
+                {historyField.error ? (
+                  <span className="text-red-400">{historyField.error}</span>
+                ) : historyField.value ? (
+                  formatAcceleratorForDisplay(historyField.value, platform)
                 ) : (
                   <span className="text-neutral-600">Press a shortcut…</span>
                 )}
               </div>
               <button
                 type="button"
-                onClick={resetHistory}
+                onClick={historyField.reset}
                 className="px-2.5 py-1 text-xs rounded border border-neutral-700 text-neutral-400 hover:border-neutral-500 hover:text-neutral-200 transition-colors"
               >
                 Reset

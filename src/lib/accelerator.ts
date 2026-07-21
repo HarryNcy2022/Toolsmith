@@ -1,3 +1,7 @@
+import { PLATFORM_KEY_MAP, MAC_MODIFIER_SYMBOLS, WIN_MODIFIER_LABELS, type Platform } from './platform';
+
+export type { Platform } from './platform';
+
 export interface KeyCombo {
   ctrl: boolean;
   shift: boolean;
@@ -167,8 +171,6 @@ export function parseAcceleratorToKeys(accel: string): KeyCombo {
   return { ctrl, meta, alt, shift, key };
 }
 
-export type Platform = 'mac' | 'win' | 'linux' | 'unknown';
-
 /**
  * Format an Electron accelerator string for human-friendly display.
  * On macOS uses symbol keys (⌘⌃⌥⇧); on other platforms uses spelled-out text.
@@ -182,18 +184,18 @@ export function formatAcceleratorForDisplay(
 
   if (platform === 'mac') {
     const parts: string[] = [];
-    if (meta) parts.push('⌘');
-    else if (ctrl) parts.push('⌃');
-    if (alt) parts.push('⌥');
-    if (shift) parts.push('⇧');
+    if (meta) parts.push(MAC_MODIFIER_SYMBOLS.meta);
+    else if (ctrl) parts.push(MAC_MODIFIER_SYMBOLS.ctrl);
+    if (alt) parts.push(MAC_MODIFIER_SYMBOLS.alt);
+    if (shift) parts.push(MAC_MODIFIER_SYMBOLS.shift);
     parts.push(k);
     return parts.join('');
   }
 
   const parts: string[] = [];
-  if (ctrl || meta) parts.push('Ctrl');
-  if (alt) parts.push('Alt');
-  if (shift) parts.push('Shift');
+  if (ctrl || meta) parts.push(WIN_MODIFIER_LABELS.ctrl);
+  if (alt) parts.push(WIN_MODIFIER_LABELS.alt);
+  if (shift) parts.push(WIN_MODIFIER_LABELS.shift);
   parts.push(k);
   return parts.join('+');
 }
