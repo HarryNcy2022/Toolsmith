@@ -3,6 +3,7 @@ import { registerTool } from '../lib/registry';
 import { useToolState } from '../lib/tool-state';
 import { useImageTransfer } from '../lib/image-transfer-store';
 import { loadFabric } from '../lib/fabric-loader';
+import { usePasteShortcut } from '../lib/use-paste-shortcut';
 
 type ToolMode = 'select' | 'arrow' | 'highlight';
 type Fabric = typeof import('fabric');
@@ -121,6 +122,8 @@ function Component() {
       setError(e instanceof Error ? e.message : String(e));
     }
   }
+
+  usePasteShortcut(pasteFromClipboard);
 
   function handleFileUpload(file: File) {
     if (!file.type.startsWith('image/')) {

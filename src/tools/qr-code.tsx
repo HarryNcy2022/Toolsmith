@@ -5,6 +5,7 @@ import jsQR from 'jsqr';
 import { registerTool } from '../lib/registry';
 import { SplitPane } from '../components/SplitPane';
 import { CopyButton } from '../components/CopyButton';
+import { usePasteShortcut } from '../lib/use-paste-shortcut';
 
 const ECC_LEVELS: { id: 'L' | 'M' | 'Q' | 'H'; label: string }[] = [
   { id: 'L', label: 'L (7%)' },
@@ -220,6 +221,8 @@ function Read() {
       setError(e instanceof Error ? e.message : String(e));
     }
   }
+
+  usePasteShortcut(pasteFromClipboard);
 
   return (
     <SplitPane orientation="row" id="qr-code-read">

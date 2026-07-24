@@ -3,6 +3,7 @@ import { SplitPane } from '../components/SplitPane';
 import { registerTool } from '../lib/registry';
 import { CopyButton } from '../components/CopyButton';
 import { useToolState } from '../lib/tool-state';
+import { usePasteShortcut } from '../lib/use-paste-shortcut';
 
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -50,6 +51,8 @@ function Component() {
       setError(e instanceof Error ? e.message : String(e));
     }
   }
+
+  usePasteShortcut(pasteFromClipboard);
 
   async function handleFile(file: File) {
     setError(null);

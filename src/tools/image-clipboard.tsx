@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { registerTool } from '../lib/registry';
 import { useToolState } from '../lib/tool-state';
+import { usePasteShortcut } from '../lib/use-paste-shortcut';
 import { addImage, clearAll, deleteImage, getAllImages, updateOrder } from '../lib/image-db';
 import type { ImageEntry } from '../lib/image-db';
 
@@ -56,6 +57,8 @@ function Component() {
       setError(e instanceof Error ? e.message : String(e));
     }
   }
+
+  usePasteShortcut(handlePaste);
 
   async function handleDelete(id: number, e: React.MouseEvent) {
     e.stopPropagation();
