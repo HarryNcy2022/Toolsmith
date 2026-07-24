@@ -135,6 +135,19 @@ ipcMain.handle('app:clipboard-has-image', async () => {
   return clipboard.has('image/png') || clipboard.has('image/jpeg');
 });
 
+ipcMain.handle('app:read-clipboard-image', async () => {
+  const { clipboard, nativeImage } = await import('electron');
+  const img = clipboard.readImage();
+  if (img.isEmpty()) return null;
+  return img.toDataURL();
+});
+
+ipcMain.handle('app:write-clipboard-image', async (_e, dataUrl: string) => {
+  const { clipboard, nativeImage } = await import('electron');
+  const img = nativeImage.createFromDataURL(dataUrl);
+  clipboard.writeImage(img);
+});
+
 void app.whenReady().then(() => {
   mainWindow = createWindow();
   mainWindow.on('closed', () => {

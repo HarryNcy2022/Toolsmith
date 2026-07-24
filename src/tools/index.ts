@@ -37,3 +37,5 @@ import './markdown-preview';
 import './html-to-jsx';
 import './qr-code';
 import './cron-parser';
+import './image-clipboard';
+import './image-annotator';
